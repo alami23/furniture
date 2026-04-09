@@ -76,8 +76,12 @@ export interface Bill {
   billNo: string;
   vendorName: string;
   date: string;
+  category: 'Rent' | 'Salary' | 'Electricity' | 'Internet' | 'Transport' | 'Material Purchase' | 'Maintenance' | 'Marketing' | 'Miscellaneous';
   amount: number;
+  paidAmount: number;
+  dueAmount: number;
   status: 'paid' | 'unpaid' | 'partial';
+  notes?: string;
 }
 
 export interface WoodInventoryItem {
@@ -101,4 +105,15 @@ export interface Transaction {
   amount: number;
   description: string;
   paymentMethod: 'cash' | 'bkash' | 'bank' | 'nagad';
+}
+
+export interface CustomerStatementEntry {
+  id: string;
+  customerId: string;
+  date: string;
+  reference: string;
+  description: string;
+  debit: number;
+  credit: number;
+  balance: number;
 }

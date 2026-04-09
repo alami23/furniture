@@ -1,4 +1,4 @@
-import { Customer, Staff, Product, Invoice, Bill, Transaction, WoodInventoryItem } from '../types';
+import { Customer, Staff, Product, Invoice, Bill, Transaction, WoodInventoryItem, CustomerStatementEntry } from '../types';
 
 export const mockWoodInventory: WoodInventoryItem[] = [
   { id: '1', no: '01', carNo: 'D-101', treeNo: 'T-505', width: 12, length: 10, cft: 120, tag: 'A+', rate: 1200, category: 'Teak Wood' },
@@ -227,8 +227,13 @@ export const mockInvoices: Invoice[] = [
 ];
 
 export const mockBills: Bill[] = [
-  { id: '1', billNo: 'BILL-5001', vendorName: 'Saw Mill Dhaka', date: '2026-03-28', amount: 45000, status: 'paid' },
-  { id: '2', billNo: 'BILL-5002', vendorName: 'Hardware Mart', date: '2026-04-02', amount: 12000, status: 'unpaid' },
+  { id: '1', billNo: 'BILL-5001', vendorName: 'Saw Mill Dhaka', date: '2026-03-28', category: 'Material Purchase', amount: 45000, paidAmount: 45000, dueAmount: 0, status: 'paid', notes: 'Payment for Teak wood logs' },
+  { id: '2', billNo: 'BILL-5002', vendorName: 'Hardware Mart', date: '2026-04-02', category: 'Material Purchase', amount: 12000, paidAmount: 0, dueAmount: 12000, status: 'unpaid', notes: 'Screws and hinges' },
+  { id: '3', billNo: 'BILL-5003', vendorName: 'DESCO', date: '2026-04-05', category: 'Electricity', amount: 8500, paidAmount: 8500, dueAmount: 0, status: 'paid' },
+  { id: '4', billNo: 'BILL-5004', vendorName: 'Amber IT', date: '2026-04-01', category: 'Internet', amount: 2500, paidAmount: 2500, dueAmount: 0, status: 'paid' },
+  { id: '5', billNo: 'BILL-5005', vendorName: 'Property Owner', date: '2026-04-01', category: 'Rent', amount: 60000, paidAmount: 30000, dueAmount: 30000, status: 'partial' },
+  { id: '6', billNo: 'BILL-5006', vendorName: 'Staff Salaries', date: '2026-04-05', category: 'Salary', amount: 150000, paidAmount: 150000, dueAmount: 0, status: 'paid' },
+  { id: '7', billNo: 'BILL-5007', vendorName: 'Local Transport', date: '2026-04-08', category: 'Transport', amount: 3500, paidAmount: 3500, dueAmount: 0, status: 'paid' },
 ];
 
 export const mockTransactions: Transaction[] = [
@@ -236,4 +241,16 @@ export const mockTransactions: Transaction[] = [
   { id: '2', date: '2026-04-02', type: 'expense', category: 'Salary', amount: 35000, description: 'Staff salary for March', paymentMethod: 'bank' },
   { id: '3', date: '2026-04-02', type: 'income', category: 'Sales', amount: 120000, description: 'Payment for INV-1002', paymentMethod: 'bkash' },
   { id: '4', date: '2026-04-03', type: 'expense', category: 'Utility', amount: 5500, description: 'Electricity bill', paymentMethod: 'nagad' },
+];
+
+export const mockCustomerStatements: CustomerStatementEntry[] = [
+  { id: '1', customerId: '1', date: '2026-03-01', reference: 'OB', description: 'Opening Balance', debit: 25000, credit: 0, balance: 25000 },
+  { id: '2', customerId: '1', date: '2026-03-15', reference: 'INV-950', description: 'Furniture Purchase', debit: 15000, credit: 0, balance: 40000 },
+  { id: '3', customerId: '1', date: '2026-03-20', reference: 'PAY-101', description: 'Cash Payment', debit: 0, credit: 10000, balance: 30000 },
+  { id: '4', customerId: '1', date: '2026-04-01', reference: 'INV-1001', description: 'Royal King Size Bed', debit: 45000, credit: 0, balance: 75000 },
+  { id: '5', customerId: '1', date: '2026-04-01', reference: 'PAY-102', description: 'Payment for INV-1001', debit: 0, credit: 40000, balance: 35000 },
+  
+  { id: '6', customerId: '3', date: '2026-03-01', reference: 'OB', description: 'Opening Balance', debit: 50000, credit: 0, balance: 50000 },
+  { id: '7', customerId: '3', date: '2026-04-05', reference: 'INV-1003', description: 'Royal King Size Bed', debit: 87000, credit: 0, balance: 137000 },
+  { id: '8', customerId: '3', date: '2026-04-06', reference: 'PAY-103', description: 'Partial Payment', debit: 0, credit: 17000, balance: 120000 },
 ];
