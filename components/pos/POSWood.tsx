@@ -33,6 +33,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { mockWoodInventory, mockCustomers } from '@/data/mock-data';
 import { WoodInventoryItem, Customer } from '@/types';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -42,6 +50,7 @@ interface CartItem extends WoodInventoryItem {
 }
 
 export function POSWood() {
+  const [inventory, setInventory] = useState<WoodInventoryItem[]>(mockWoodInventory);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [carNoFilter, setCarNoFilter] = useState('all');
@@ -50,27 +59,30 @@ export function POSWood() {
   const [discount, setDiscount] = useState<number>(0);
   const [delivery, setDelivery] = useState<number>(0);
   const [paidAmount, setPaidAmount] = useState<number>(0);
+  
+  // Edit Modal State
+  const [editingItem, setEditingItem] = useState<WoodInventoryItem | null>(null);
 
   // Derived state
   const categories = useMemo(() => {
-    const cats = new Set(mockWoodInventory.map(item => item.category));
+    const cats = new Set(inventory.map(item => item.category));
     return ['all', ...Array.from(cats)];
-  }, []);
+  }, [inventory]);
 
   const carNumbers = useMemo(() => {
-    const cars = new Set(mockWoodInventory.map(item => item.carNo));
+    const cars = new Set(inventory.map(item => item.carNo));
     return ['all', ...Array.from(cars)];
-  }, []);
+  }, [inventory]);
 
   const filteredProducts = useMemo(() => {
-    return mockWoodInventory.filter(item => {
+    return inventory.filter(item => {
       const matchesSearch = item.treeNo.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            item.category.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
       const matchesCar = carNoFilter === 'all' || item.carNo === carNoFilter;
       return matchesSearch && matchesCategory && matchesCar;
     });
-  }, [searchQuery, categoryFilter, carNoFilter]);
+  }, [inventory, searchQuery, categoryFilter, carNoFilter]);
 
   const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + (item.saleRate * item.cft * item.quantity), 0);
@@ -114,6 +126,14 @@ export function POSWood() {
     setDelivery(0);
     setPaidAmount(0);
     setSelectedCustomer('');
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingItem) return;
+    setInventory(prev => prev.map(item => 
+      item.id === editingItem.id ? editingItem : item
+    ));
+    setEditingItem(null);
   };
 
   return (
@@ -174,7 +194,7 @@ export function POSWood() {
                     <TableHead>LENGTH</TableHead>
                     <TableHead>CFT</TableHead>
                     <TableHead>TAG</TableHead>
-                    <TableHead>RATE</TableHead>
+                    <TableHead>SELL PRICE</TableHead>
                     <TableHead className="text-right">ACTION</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -182,32 +202,32 @@ export function POSWood() {
                   {filteredProducts.map((item) => (
                     <TableRow key={item.id} className="group hover:bg-orange-50/50 transition-colors">
                       <TableCell className="font-medium">{item.itemNo}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-none">
-                          {item.carNo}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-semibold">{item.treeNo}</TableCell>
+                      <TableCell>{item.carNo.replace(/\D/g, '')}</TableCell>
+                      <TableCell className="font-semibold text-green-700">{item.treeNo.replace(/\D/g, '')}</TableCell>
                       <TableCell>{item.width}&quot;</TableCell>
                       <TableCell>{item.length}&apos;</TableCell>
-                      <TableCell className="font-bold text-orange-600">{item.cft}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-[10px] uppercase">
-                          {item.category}
-                        </Badge>
+                      <TableCell className="font-bold">{item.cft.toFixed(5)}</TableCell>
+                      <TableCell className="text-xs text-gray-600 max-w-[150px] truncate" title={item.notes || ''}>
+                        {item.notes || '-'}
                       </TableCell>
-                      <TableCell>{formatCurrency(item.saleRate)}</TableCell>
+                      <TableCell className="font-bold text-orange-600">{formatCurrency(item.saleRate)}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-gray-400 hover:text-blue-600"
+                            onClick={() => setEditingItem(item)}
+                          >
                             <Edit2 className="w-4 h-4" />
                           </Button>
                           <Button 
-                            size="sm" 
-                            className="h-8 bg-orange-500 hover:bg-orange-600 text-white"
+                            variant="ghost"
+                            size="icon" 
+                            className="h-8 w-8 text-gray-400 hover:text-orange-600"
                             onClick={() => addToCart(item)}
                           >
-                            <Plus className="w-4 h-4 mr-1" /> Add
+                            <Plus className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -384,6 +404,81 @@ export function POSWood() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Wood Item</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="carNo" className="text-right">
+                  Car
+                </Label>
+                <Input
+                  id="carNo"
+                  value={editingItem.carNo}
+                  onChange={(e) => setEditingItem({ ...editingItem, carNo: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="treeNo" className="text-right">
+                  Tree No
+                </Label>
+                <Input
+                  id="treeNo"
+                  value={editingItem.treeNo}
+                  onChange={(e) => setEditingItem({ ...editingItem, treeNo: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="width" className="text-right">
+                  Width
+                </Label>
+                <Input
+                  id="width"
+                  type="number"
+                  value={editingItem.width}
+                  onChange={(e) => setEditingItem({ ...editingItem, width: Number(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="length" className="text-right">
+                  Length
+                </Label>
+                <Input
+                  id="length"
+                  type="number"
+                  value={editingItem.length}
+                  onChange={(e) => setEditingItem({ ...editingItem, length: Number(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="saleRate" className="text-right">
+                  Sell Price
+                </Label>
+                <Input
+                  id="saleRate"
+                  type="number"
+                  value={editingItem.saleRate}
+                  onChange={(e) => setEditingItem({ ...editingItem, saleRate: Number(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingItem(null)}>Cancel</Button>
+            <Button onClick={handleSaveEdit}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
