@@ -91,7 +91,7 @@ export function InvoiceList({ onView, onEdit }: InvoiceListProps) {
               />
             </div>
             
-            <Select value={customerFilter} onValueChange={setCustomerFilter}>
+            <Select value={customerFilter} onValueChange={(val) => setCustomerFilter(val || 'all')}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by Customer" />
               </SelectTrigger>
@@ -103,7 +103,7 @@ export function InvoiceList({ onView, onEdit }: InvoiceListProps) {
               </SelectContent>
             </Select>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || 'all')}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -193,10 +193,8 @@ export function InvoiceList({ onView, onEdit }: InvoiceListProps) {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
+                        <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors">
+                          <MoreHorizontal className="w-4 h-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
                           <DropdownMenuItem className="gap-2" onClick={() => onView(invoice)}>

@@ -119,7 +119,8 @@ export function InvoiceForm({ invoice, isOpen, onClose, onSave }: InvoiceFormPro
     calculateTotals(newItems, formData.discount || 0, formData.deliveryCharge || 0, formData.tax || 0, formData.paidAmount || 0);
   };
 
-  const handleCustomerChange = (customerId: string) => {
+  const handleCustomerChange = (customerId: string | null) => {
+    if (!customerId) return;
     const customer = mockCustomers.find(c => c.id === customerId);
     setFormData(prev => ({
       ...prev,
@@ -192,7 +193,7 @@ export function InvoiceForm({ invoice, isOpen, onClose, onSave }: InvoiceFormPro
                 <div key={index} className="grid grid-cols-12 gap-3 items-end bg-gray-50 p-3 rounded-lg border border-gray-100 group">
                   <div className="col-span-12 md:col-span-5 space-y-1.5">
                     <Label className="text-[10px] uppercase text-gray-400">Product / Service</Label>
-                    <Select value={item.productId} onValueChange={(val) => updateItem(index, 'productId', val)}>
+                    <Select value={item.productId} onValueChange={(val) => updateItem(index, 'productId', val || '')}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select Product" />
                       </SelectTrigger>

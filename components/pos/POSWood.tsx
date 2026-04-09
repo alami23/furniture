@@ -73,7 +73,7 @@ export function POSWood() {
   }, [searchQuery, categoryFilter, carNoFilter]);
 
   const subtotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + (item.rate * item.cft * item.quantity), 0);
+    return cart.reduce((sum, item) => sum + (item.saleRate * item.cft * item.quantity), 0);
   }, [cart]);
 
   const total = useMemo(() => {
@@ -132,7 +132,7 @@ export function POSWood() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val || 'all')}>
                 <SelectTrigger className="w-[180px]">
                   <Filter className="w-4 h-4 mr-2 text-gray-400" />
                   <SelectValue placeholder="Category" />
@@ -145,7 +145,7 @@ export function POSWood() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={carNoFilter} onValueChange={setCarNoFilter}>
+              <Select value={carNoFilter} onValueChange={(val) => setCarNoFilter(val || 'all')}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Car No" />
                 </SelectTrigger>
@@ -181,7 +181,7 @@ export function POSWood() {
                 <TableBody>
                   {filteredProducts.map((item) => (
                     <TableRow key={item.id} className="group hover:bg-orange-50/50 transition-colors">
-                      <TableCell className="font-medium">{item.no}</TableCell>
+                      <TableCell className="font-medium">{item.itemNo}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-none">
                           {item.carNo}
@@ -193,10 +193,10 @@ export function POSWood() {
                       <TableCell className="font-bold text-orange-600">{item.cft}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px] uppercase">
-                          {item.tag}
+                          {item.category}
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatCurrency(item.rate)}</TableCell>
+                      <TableCell>{formatCurrency(item.saleRate)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600">
@@ -240,7 +240,7 @@ export function POSWood() {
           <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-0">
             {/* Customer Selection */}
             <div className="flex gap-2 shrink-0">
-              <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+              <Select value={selectedCustomer} onValueChange={(val) => setSelectedCustomer(val || '')}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select Customer" />
                 </SelectTrigger>
@@ -273,7 +273,7 @@ export function POSWood() {
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="text-sm font-bold">{item.treeNo} - {item.category}</p>
-                          <p className="text-xs text-gray-500">{item.cft} CFT @ {formatCurrency(item.rate)}</p>
+                          <p className="text-xs text-gray-500">{item.cft} CFT @ {formatCurrency(item.saleRate)}</p>
                         </div>
                         <Button 
                           variant="ghost" 
@@ -297,7 +297,7 @@ export function POSWood() {
                           >+</button>
                         </div>
                         <p className="text-sm font-bold text-orange-600">
-                          {formatCurrency(item.rate * item.cft * item.quantity)}
+                          {formatCurrency(item.saleRate * item.cft * item.quantity)}
                         </p>
                       </div>
                     </div>

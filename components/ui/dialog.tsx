@@ -35,7 +35,7 @@ const DialogContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
-    <DialogPrimitive.Positioner className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <DialogPrimitive.Popup
         ref={ref}
         className={cn(
@@ -50,7 +50,7 @@ const DialogContent = React.forwardRef<
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Popup>
-    </DialogPrimitive.Positioner>
+    </div>
   </DialogPortal>
 ))
 DialogContent.displayName = DialogPrimitive.Popup.displayName

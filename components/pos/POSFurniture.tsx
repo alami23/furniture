@@ -126,7 +126,7 @@ export function POSFurniture() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val || 'all')}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -140,17 +140,17 @@ export function POSFurniture() {
               </Select>
               <div className="flex items-center bg-gray-100 p-1 rounded-lg">
                 <Button 
-                  variant={viewMode === 'grid' ? 'white' : 'ghost'} 
+                  variant="ghost" 
                   size="icon" 
-                  className={cn("h-8 w-8", viewMode === 'grid' && "shadow-sm")}
+                  className={cn("h-8 w-8", viewMode === 'grid' ? "bg-white shadow-sm" : "hover:bg-gray-200")}
                   onClick={() => setViewMode('grid')}
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </Button>
                 <Button 
-                  variant={viewMode === 'list' ? 'white' : 'ghost'} 
+                  variant="ghost" 
                   size="icon" 
-                  className={cn("h-8 w-8", viewMode === 'list' && "shadow-sm")}
+                  className={cn("h-8 w-8", viewMode === 'list' ? "bg-white shadow-sm" : "hover:bg-gray-200")}
                   onClick={() => setViewMode('list')}
                 >
                   <List className="w-4 h-4" />
@@ -270,7 +270,7 @@ export function POSFurniture() {
           <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-0">
             {/* Customer Selection */}
             <div className="flex gap-2 shrink-0">
-              <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+              <Select value={selectedCustomer} onValueChange={(val) => setSelectedCustomer(val || '')}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select Customer" />
                 </SelectTrigger>

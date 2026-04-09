@@ -1,14 +1,71 @@
-import { Customer, Staff, Product, Invoice, Bill, Transaction, WoodInventoryItem, CustomerStatementEntry } from '../types';
+import { Customer, Staff, Product, Invoice, Bill, Transaction, WoodInventoryItem, CustomerStatementEntry, Category, StaffStatementEntry, SMSLog, SMSTemplate } from '../types';
 
 export const mockWoodInventory: WoodInventoryItem[] = [
-  { id: '1', no: '01', carNo: 'D-101', treeNo: 'T-505', width: 12, length: 10, cft: 120, tag: 'A+', rate: 1200, category: 'Teak Wood' },
-  { id: '2', no: '02', carNo: 'D-101', treeNo: 'T-506', width: 14, length: 12, cft: 168, tag: 'A', rate: 1100, category: 'Teak Wood' },
-  { id: '3', no: '03', carNo: 'G-202', treeNo: 'M-101', width: 10, length: 8, cft: 80, tag: 'B', rate: 800, category: 'Mahogany' },
-  { id: '4', no: '04', carNo: 'G-202', treeNo: 'M-102', width: 15, length: 15, cft: 225, tag: 'A+', rate: 950, category: 'Mahogany' },
-  { id: '5', no: '05', carNo: 'C-303', treeNo: 'P-001', width: 8, length: 20, cft: 160, tag: 'C', rate: 500, category: 'Pine' },
-  { id: '6', no: '06', carNo: 'C-303', treeNo: 'P-002', width: 10, length: 10, cft: 100, tag: 'B', rate: 550, category: 'Pine' },
-  { id: '7', no: '07', carNo: 'S-404', treeNo: 'PL-01', width: 48, length: 96, cft: 32, tag: 'Plywood', rate: 150, category: 'Plywood' },
-  { id: '8', no: '08', carNo: 'S-404', treeNo: 'MDF-01', width: 48, length: 96, cft: 32, tag: 'MDF', rate: 120, category: 'MDF' },
+  { 
+    id: '1', 
+    itemNo: '01', 
+    carNo: 'D-101', 
+    treeNo: 'T-505', 
+    woodType: 'Burma Teak',
+    width: 12, 
+    length: 10, 
+    thickness: 2,
+    cft: 20, 
+    unit: 'cft',
+    stockQty: 15,
+    purchaseRate: 1200, 
+    saleRate: 1500,
+    category: 'Log',
+    notes: 'Premium quality logs'
+  },
+  { 
+    id: '2', 
+    itemNo: '02', 
+    carNo: 'D-101', 
+    treeNo: 'T-506', 
+    woodType: 'Burma Teak',
+    width: 14, 
+    length: 12, 
+    thickness: 1.5,
+    cft: 25.2, 
+    unit: 'cft',
+    stockQty: 10,
+    purchaseRate: 1100, 
+    saleRate: 1400,
+    category: 'Log'
+  },
+  { 
+    id: '3', 
+    itemNo: '03', 
+    carNo: 'G-202', 
+    treeNo: 'M-101', 
+    woodType: 'Mahogany',
+    width: 10, 
+    length: 8, 
+    thickness: 1,
+    cft: 6.67, 
+    unit: 'cft',
+    stockQty: 45,
+    purchaseRate: 800, 
+    saleRate: 1100,
+    category: 'Plank'
+  },
+  { 
+    id: '4', 
+    itemNo: '04', 
+    carNo: 'G-202', 
+    treeNo: 'M-102', 
+    woodType: 'Mahogany',
+    width: 15, 
+    length: 15, 
+    thickness: 3,
+    cft: 56.25, 
+    unit: 'cft',
+    stockQty: 5,
+    purchaseRate: 950, 
+    saleRate: 1300,
+    category: 'Log'
+  },
 ];
 
 export const mockCustomers: Customer[] = [
@@ -123,23 +180,180 @@ export const mockCustomers: Customer[] = [
 ];
 
 export const mockStaff: Staff[] = [
-  { id: '1', name: 'Alamin', role: 'Manager', phone: '01700000001', email: 'alamin@aranya.com', salary: 35000, joiningDate: '2024-01-15', status: 'active' },
-  { id: '2', name: 'Rakib', role: 'Sales Executive', phone: '01700000002', email: 'rakib@aranya.com', salary: 22000, joiningDate: '2024-05-20', status: 'active' },
-  { id: '3', name: 'Hasan', role: 'Carpenter', phone: '01700000003', email: 'hasan@aranya.com', salary: 25000, joiningDate: '2023-11-10', status: 'active' },
-  { id: '4', name: 'Sohel', role: 'Delivery Man', phone: '01700000004', email: 'sohel@aranya.com', salary: 18000, joiningDate: '2025-02-01', status: 'active' },
+  { 
+    id: '1', 
+    name: 'Alamin Hossain', 
+    phone: '01711223344', 
+    email: 'alamin@aranya.com', 
+    address: 'Mirpur-10, Dhaka',
+    designation: 'General Manager',
+    department: 'Management',
+    salary: 45000, 
+    joiningDate: '2023-01-15', 
+    status: 'active',
+    nid: '1990123456789',
+    notes: 'Senior manager handling overall operations.'
+  },
+  { 
+    id: '2', 
+    name: 'Rakib Ahmed', 
+    phone: '01822334455', 
+    email: 'rakib@aranya.com', 
+    address: 'Uttara Sector 4, Dhaka',
+    designation: 'Sales Executive',
+    department: 'Sales',
+    salary: 25000, 
+    joiningDate: '2024-05-20', 
+    status: 'active',
+    nid: '1995987654321'
+  },
+  { 
+    id: '3', 
+    name: 'Hasan Ali', 
+    phone: '01933445566', 
+    email: 'hasan@aranya.com', 
+    address: 'Badda, Dhaka',
+    designation: 'Head Carpenter',
+    department: 'Production',
+    salary: 30000, 
+    joiningDate: '2023-11-10', 
+    status: 'active',
+    nid: '1988554433221',
+    notes: 'Expert in Teak wood carving.'
+  },
+  { 
+    id: '4', 
+    name: 'Sohel Rana', 
+    phone: '01544556677', 
+    email: 'sohel@aranya.com', 
+    address: 'Gazipur, Dhaka',
+    designation: 'Delivery Lead',
+    department: 'Logistics',
+    salary: 20000, 
+    joiningDate: '2025-02-01', 
+    status: 'active',
+    nid: '1998112233445'
+  },
 ];
 
 export const mockProducts: Product[] = [
-  { id: '1', name: 'Royal King Size Bed', category: 'Bed', type: 'furniture', price: 85000, cost: 62000, stock: 5, unit: 'pcs', minStock: 2, image: 'https://picsum.photos/seed/bed/400/300' },
-  { id: '2', name: 'Modern Velvet Sofa (3+2+1)', category: 'Living', type: 'furniture', price: 125000, cost: 95000, stock: 3, unit: 'pcs', minStock: 1, image: 'https://picsum.photos/seed/sofa/400/300' },
-  { id: '3', name: 'Classic Dining Table (6 Chairs)', category: 'Dining', type: 'furniture', price: 65000, cost: 48000, stock: 4, unit: 'pcs', minStock: 1, image: 'https://picsum.photos/seed/dining/400/300' },
-  { id: '4', name: 'Ergonomic Office Chair', category: 'Office', type: 'furniture', price: 18500, cost: 12000, stock: 12, unit: 'pcs', minStock: 5, image: 'https://picsum.photos/seed/chair/400/300' },
-  { id: '5', name: 'Wooden Wardrobe (4 Door)', category: 'Bedroom', type: 'furniture', price: 45000, cost: 32000, stock: 2, unit: 'pcs', minStock: 1, image: 'https://picsum.photos/seed/wardrobe/400/300' },
-  { id: '6', name: 'Dressing Table (Premium)', category: 'Bedroom', type: 'furniture', price: 22000, cost: 15000, stock: 6, unit: 'pcs', minStock: 2, image: 'https://picsum.photos/seed/dressing/400/300' },
-  { id: '7', name: 'TV Trolley (Modern)', category: 'Living', type: 'furniture', price: 15000, cost: 10000, stock: 8, unit: 'pcs', minStock: 3, image: 'https://picsum.photos/seed/tv/400/300' },
-  { id: '8', name: 'Bookshelf (Library Style)', category: 'Office', type: 'furniture', price: 28000, cost: 19000, stock: 4, unit: 'pcs', minStock: 2, image: 'https://picsum.photos/seed/bookshelf/400/300' },
-  { id: '9', name: 'Burma Teak Log', category: 'Log', type: 'wood', price: 2500, cost: 1800, stock: 150, unit: 'cft', minStock: 50 },
-  { id: '10', name: 'Segun Wood Plank', category: 'Plank', type: 'wood', price: 1200, cost: 900, stock: 500, unit: 'sft', minStock: 100 },
+  { 
+    id: '1', 
+    sku: 'FUR-BED-001',
+    name: 'Royal King Size Bed', 
+    category: 'Bed', 
+    subCategory: 'Luxury',
+    type: 'furniture', 
+    material: 'Teak Wood',
+    color: 'Antique Polish',
+    size: '6ft x 7ft',
+    price: 85000, 
+    cost: 62000, 
+    stock: 5, 
+    unit: 'pcs', 
+    reorderLevel: 2, 
+    status: 'in-stock',
+    image: 'https://picsum.photos/seed/bed/400/300',
+    note: 'Best seller in Dhaka region.'
+  },
+  { 
+    id: '2', 
+    sku: 'FUR-SOF-001',
+    name: 'Modern Velvet Sofa (3+2+1)', 
+    category: 'Living', 
+    subCategory: 'Sofa Set',
+    type: 'furniture', 
+    material: 'Mahogany & Velvet',
+    color: 'Deep Blue',
+    size: 'Standard',
+    price: 125000, 
+    cost: 95000, 
+    stock: 1, 
+    unit: 'pcs', 
+    reorderLevel: 2, 
+    status: 'low-stock',
+    image: 'https://picsum.photos/seed/sofa/400/300'
+  },
+  { 
+    id: '3', 
+    sku: 'FUR-DIN-001',
+    name: 'Classic Dining Table (6 Chairs)', 
+    category: 'Dining', 
+    subCategory: 'Dining Set',
+    type: 'furniture', 
+    material: 'Segun Wood',
+    color: 'Natural',
+    size: '6 Chairs',
+    price: 65000, 
+    cost: 48000, 
+    stock: 4, 
+    unit: 'pcs', 
+    reorderLevel: 1, 
+    status: 'in-stock',
+    image: 'https://picsum.photos/seed/dining/400/300'
+  },
+  { 
+    id: '4', 
+    sku: 'FUR-CHR-001',
+    name: 'Ergonomic Office Chair', 
+    category: 'Office', 
+    subCategory: 'Chair',
+    type: 'furniture', 
+    material: 'Mesh & Plastic',
+    color: 'Black',
+    size: 'Adjustable',
+    price: 18500, 
+    cost: 12000, 
+    stock: 12, 
+    unit: 'pcs', 
+    reorderLevel: 5, 
+    status: 'in-stock',
+    image: 'https://picsum.photos/seed/chair/400/300'
+  },
+  { 
+    id: '5', 
+    sku: 'FUR-WRD-001',
+    name: 'Wooden Wardrobe (4 Door)', 
+    category: 'Bedroom', 
+    subCategory: 'Wardrobe',
+    type: 'furniture', 
+    material: 'Plywood & Veneer',
+    color: 'Walnut',
+    size: '6ft x 6ft',
+    price: 45000, 
+    cost: 32000, 
+    stock: 0, 
+    unit: 'pcs', 
+    reorderLevel: 1, 
+    status: 'out-of-stock',
+    image: 'https://picsum.photos/seed/wardrobe/400/300'
+  },
+  { 
+    id: '9', 
+    sku: 'WD-LOG-001',
+    name: 'Burma Teak Log', 
+    category: 'Log', 
+    type: 'wood', 
+    price: 2500, 
+    cost: 1800, 
+    stock: 150, 
+    unit: 'cft', 
+    reorderLevel: 50,
+    status: 'in-stock'
+  },
+  { 
+    id: '10', 
+    sku: 'WD-PLK-001',
+    name: 'Segun Wood Plank', 
+    category: 'Plank', 
+    type: 'wood', 
+    price: 1200, 
+    cost: 900, 
+    stock: 500, 
+    unit: 'sft', 
+    reorderLevel: 100,
+    status: 'in-stock'
+  },
 ];
 
 export const mockInvoices: Invoice[] = [
@@ -237,10 +451,96 @@ export const mockBills: Bill[] = [
 ];
 
 export const mockTransactions: Transaction[] = [
-  { id: '1', date: '2026-04-01', type: 'income', category: 'Sales', amount: 40000, description: 'Payment for INV-1001', paymentMethod: 'cash' },
-  { id: '2', date: '2026-04-02', type: 'expense', category: 'Salary', amount: 35000, description: 'Staff salary for March', paymentMethod: 'bank' },
-  { id: '3', date: '2026-04-02', type: 'income', category: 'Sales', amount: 120000, description: 'Payment for INV-1002', paymentMethod: 'bkash' },
-  { id: '4', date: '2026-04-03', type: 'expense', category: 'Utility', amount: 5500, description: 'Electricity bill', paymentMethod: 'nagad' },
+  { 
+    id: '1', 
+    date: '2026-04-01', 
+    type: 'income', 
+    referenceType: 'Customer Payment', 
+    referenceNo: 'PAY-102', 
+    account: 'Cash Account', 
+    category: 'Sales', 
+    amount: 40000, 
+    paymentMethod: 'cash', 
+    status: 'completed', 
+    note: 'Payment for INV-1001' 
+  },
+  { 
+    id: '2', 
+    date: '2026-04-02', 
+    type: 'expense', 
+    referenceType: 'Salary Payment', 
+    referenceNo: 'SAL-MAR-01', 
+    account: 'City Bank', 
+    category: 'Salary', 
+    amount: 35000, 
+    paymentMethod: 'bank', 
+    status: 'completed', 
+    note: 'Staff salary for March' 
+  },
+  { 
+    id: '3', 
+    date: '2026-04-02', 
+    type: 'income', 
+    referenceType: 'Sale', 
+    referenceNo: 'INV-1002', 
+    account: 'bKash Merchant', 
+    category: 'Sales', 
+    amount: 120000, 
+    paymentMethod: 'bkash', 
+    status: 'completed' 
+  },
+  { 
+    id: '4', 
+    date: '2026-04-03', 
+    type: 'expense', 
+    referenceType: 'Bill Payment', 
+    referenceNo: 'BILL-5003', 
+    account: 'Nagad Personal', 
+    category: 'Utility', 
+    amount: 5500, 
+    paymentMethod: 'nagad', 
+    status: 'completed', 
+    note: 'Electricity bill' 
+  },
+  { 
+    id: '5', 
+    date: '2026-04-04', 
+    type: 'expense', 
+    referenceType: 'Purchase', 
+    referenceNo: 'PUR-882', 
+    account: 'Cash Account', 
+    category: 'Material', 
+    amount: 25000, 
+    paymentMethod: 'cash', 
+    status: 'completed', 
+    note: 'Teak wood logs purchase' 
+  },
+  { 
+    id: '6', 
+    date: '2026-04-05', 
+    type: 'income', 
+    referenceType: 'Adjustment', 
+    referenceNo: 'ADJ-001', 
+    account: 'Cash Account', 
+    category: 'Other', 
+    amount: 1500, 
+    paymentMethod: 'cash', 
+    status: 'completed', 
+    note: 'Cash rounding adjustment' 
+  },
+  { 
+    id: '7', 
+    date: '2026-04-06', 
+    type: 'expense', 
+    referenceType: 'Expense', 
+    referenceNo: 'EXP-901', 
+    account: 'Cash Account', 
+    category: 'Marketing', 
+    amount: 3000, 
+    paymentMethod: 'cash', 
+    status: 'pending', 
+    note: 'Local flyer distribution' 
+  },
 ];
 
 export const mockCustomerStatements: CustomerStatementEntry[] = [
@@ -253,4 +553,55 @@ export const mockCustomerStatements: CustomerStatementEntry[] = [
   { id: '6', customerId: '3', date: '2026-03-01', reference: 'OB', description: 'Opening Balance', debit: 50000, credit: 0, balance: 50000 },
   { id: '7', customerId: '3', date: '2026-04-05', reference: 'INV-1003', description: 'Royal King Size Bed', debit: 87000, credit: 0, balance: 137000 },
   { id: '8', customerId: '3', date: '2026-04-06', reference: 'PAY-103', description: 'Partial Payment', debit: 0, credit: 17000, balance: 120000 },
+];
+
+export const mockCategories: Category[] = [
+  // Furniture Categories
+  { id: '1', name: 'Bed', type: 'furniture', description: 'King, Queen, and Single beds', status: 'active', itemCount: 12 },
+  { id: '2', name: 'Sofa', type: 'furniture', description: 'Living room sofa sets', status: 'active', itemCount: 8 },
+  { id: '3', name: 'Dining', type: 'furniture', description: 'Dining tables and chairs', status: 'active', itemCount: 15 },
+  { id: '4', name: 'Chair', type: 'furniture', description: 'Office and home chairs', status: 'active', itemCount: 45 },
+  { id: '5', name: 'Wardrobe', type: 'furniture', description: 'Wooden wardrobes', status: 'active', itemCount: 6 },
+  { id: '6', name: 'Dressing', type: 'furniture', description: 'Dressing tables', status: 'active', itemCount: 10 },
+  { id: '7', name: 'TV Unit', type: 'furniture', description: 'TV trolleys and units', status: 'active', itemCount: 5 },
+  { id: '8', name: 'Shelf', type: 'furniture', description: 'Bookshelves and racks', status: 'active', itemCount: 12 },
+  { id: '9', name: 'Door', type: 'furniture', description: 'Main and internal doors', status: 'active', itemCount: 20 },
+  { id: '10', name: 'Office Table', type: 'furniture', description: 'Workstations and desks', status: 'active', itemCount: 18 },
+  
+  // Wood Categories
+  { id: '11', name: 'Solid Wood', type: 'wood', description: 'Raw solid timber logs', status: 'active', itemCount: 150 },
+  { id: '12', name: 'Teak', type: 'wood', description: 'Burma and local Teak', status: 'active', itemCount: 85 },
+  { id: '13', name: 'Mahogany', type: 'wood', description: 'High quality Mahogany', status: 'active', itemCount: 120 },
+  { id: '14', name: 'MDF', type: 'wood', description: 'Medium density fiberboard', status: 'active', itemCount: 40 },
+  { id: '15', name: 'Plywood', type: 'wood', description: 'Commercial and marine plywood', status: 'active', itemCount: 60 },
+  { id: '16', name: 'Hardware', type: 'wood', description: 'Hinges, locks, and handles', status: 'active', itemCount: 200 },
+  { id: '17', name: 'Finishing Materials', type: 'wood', description: 'Polish, lacquer, and paint', status: 'active', itemCount: 35 },
+];
+
+export const mockStaffStatements: StaffStatementEntry[] = [
+  // Alamin Hossain (Staff ID: 1)
+  { id: '1', staffId: '1', date: '2026-01-05', type: 'Salary', reference: 'January 2026', amount: 45000, deduction: 0, bonus: 0, paid: 45000, due: 0 },
+  { id: '2', staffId: '1', date: '2026-02-05', type: 'Salary', reference: 'February 2026', amount: 45000, deduction: 500, bonus: 0, paid: 44500, due: 0 },
+  { id: '3', staffId: '1', date: '2026-03-01', type: 'Advance', reference: 'Personal Advance', amount: 0, deduction: 0, bonus: 0, paid: 5000, due: 0 },
+  { id: '4', staffId: '1', date: '2026-03-05', type: 'Salary', reference: 'March 2026', amount: 45000, deduction: 5000, bonus: 2000, paid: 42000, due: 0 },
+  
+  // Rakib Ahmed (Staff ID: 2)
+  { id: '5', staffId: '2', date: '2026-01-05', type: 'Salary', reference: 'January 2026', amount: 25000, deduction: 0, bonus: 0, paid: 25000, due: 0 },
+  { id: '6', staffId: '2', date: '2026-02-05', type: 'Salary', reference: 'February 2026', amount: 25000, deduction: 0, bonus: 0, paid: 20000, due: 5000 },
+  { id: '7', staffId: '2', date: '2026-03-05', type: 'Salary', reference: 'March 2026', amount: 25000, deduction: 0, bonus: 1000, paid: 31000, due: 0 },
+];
+
+export const mockSMSTemplates: SMSTemplate[] = [
+  { id: '1', name: 'Due Reminder', type: 'Due Reminder', content: 'Dear [Customer Name], this is a friendly reminder regarding your outstanding due of [Amount] at Aranya Furniture. Please settle at your earliest convenience.' },
+  { id: '2', name: 'Delivery Ready', type: 'Delivery Ready', content: 'Great news [Customer Name]! Your order [Invoice No] is ready for delivery. Our team will contact you shortly for scheduling.' },
+  { id: '3', name: 'Payment Received', type: 'Payment Received', content: 'Thank you [Customer Name]! We have received your payment of [Amount]. Your current balance is [Balance].' },
+  { id: '4', name: 'Thank You', type: 'Thank You', content: 'Thank you for choosing Aranya Furniture, [Customer Name]! We hope you love your new furniture. Visit us again soon!' },
+  { id: '5', name: 'Promotional', type: 'Promotional', content: 'Eid Mubarak! Enjoy up to 20% discount on all furniture at Aranya Furniture this season. Offer valid till end of the month.' },
+];
+
+export const mockSMSHistory: SMSLog[] = [
+  { id: '1', recipientName: 'Rahim Traders', recipientPhone: '01711223344', recipientType: 'customer', message: 'Dear Rahim Traders, this is a friendly reminder regarding your outstanding due of 35,000 at Aranya Furniture.', type: 'Due Reminder', status: 'sent', sentAt: '2026-04-01 10:30 AM' },
+  { id: '2', recipientName: 'Al Madina Decor', recipientPhone: '01644556677', recipientType: 'customer', message: 'Thank you for choosing Aranya Furniture, Al Madina Decor!', type: 'Thank You', status: 'sent', sentAt: '2026-04-02 02:15 PM' },
+  { id: '3', recipientName: 'Rakib Ahmed', recipientPhone: '01822334455', recipientType: 'staff', message: 'Staff Meeting at 4 PM today in the main showroom.', type: 'Custom', status: 'sent', sentAt: '2026-04-05 09:00 AM' },
+  { id: '4', recipientName: 'Karim Wood Works', recipientPhone: '01555667788', recipientType: 'customer', message: 'Great news Karim Wood Works! Your order INV-1004 is ready for delivery.', type: 'Delivery Ready', status: 'failed', sentAt: '2026-04-07 11:45 AM' },
 ];

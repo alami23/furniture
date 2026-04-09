@@ -65,7 +65,7 @@ export function RecentInvoices() {
 }
 
 export function LowStockAlerts() {
-  const lowStockItems = mockProducts.filter(p => p.stock <= p.minStock);
+  const lowStockItems = mockProducts.filter(p => p.stock <= p.reorderLevel);
 
   return (
     <Card className="border-none shadow-sm">
@@ -82,7 +82,7 @@ export function LowStockAlerts() {
               <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-red-50 border border-red-100">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                  <p className="text-xs text-gray-500">Min: {item.minStock} {item.unit}</p>
+                  <p className="text-xs text-gray-500">Min: {item.reorderLevel} {item.unit}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-red-600">{item.stock} {item.unit}</p>
