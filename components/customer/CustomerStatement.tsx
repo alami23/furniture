@@ -15,23 +15,47 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, cn } from '@/lib/utils';
-import { mockCustomers, mockCustomerStatements } from '@/data/mock-data';
+import { mockCustomerStatements } from '@/data/mock-data';
 import { Customer, CustomerStatementEntry } from '@/types';
 import { motion } from 'motion/react';
 
+import { useCustomers } from '@/lib/context/CustomerContext';
+
 export function CustomerStatement() {
+  const { customers } = useCustomers();
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
   const selectedCustomer = useMemo(() => {
-    return mockCustomers.find(c => c.id === selectedCustomerId);
-  }, [selectedCustomerId]);
+    return customers.find(c => c.id === selectedCustomerId);
+  }, [selectedCustomerId, customers]);
 
   const statementData = useMemo(() => {
-    if (!selectedCustomerId) return [];
+    if (!selectedCustomerId || !selectedCustomer) return [];
     
     let filtered = mockCustomerStatements.filter(entry => entry.customerId === selectedCustomerId);
+    
+    // If the customer has an openingBalance and there's no explicit OB entry in mock data, 
+    // we can prepend one. Or we can just use the customer's openingBalance as the starting point.
+    // For simplicity, let's prepend an OB entry if the customer has an openingBalance > 0
+    // and there isn't already an OB entry.
+    const hasOBEntry = filtered.some(entry => entry.reference === 'OB');
+    if (!hasOBEntry && selectedCustomer.openingBalance) {
+      filtered = [
+        {
+          id: `ob-${selectedCustomer.id}`,
+          customerId: selectedCustomer.id,
+          date: selectedCustomer.createdAt || new Date().toISOString().split('T')[0],
+          reference: 'OB',
+          description: 'Initial Opening Balance',
+          debit: selectedCustomer.openingBalance > 0 ? selectedCustomer.openingBalance : 0,
+          credit: selectedCustomer.openingBalance < 0 ? Math.abs(selectedCustomer.openingBalance) : 0,
+          balance: selectedCustomer.openingBalance
+        },
+        ...filtered
+      ];
+    }
     
     if (startDate) {
       filtered = filtered.filter(entry => entry.date >= startDate);
@@ -41,8 +65,15 @@ export function CustomerStatement() {
       filtered = filtered.filter(entry => entry.date <= endDate);
     }
     
-    return filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [selectedCustomerId, startDate, endDate]);
+    // Recalculate balances based on chronological order
+    const sorted = filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    let runningBalance = 0;
+    return sorted.map(entry => {
+      runningBalance = runningBalance + entry.debit - entry.credit;
+      return { ...entry, balance: runningBalance };
+    });
+  }, [selectedCustomerId, selectedCustomer, startDate, endDate]);
 
   const summary = useMemo(() => {
     const totalDebit = statementData.reduce((sum, entry) => sum + entry.debit, 0);
@@ -75,7 +106,7 @@ export function CustomerStatement() {
               onChange={(e) => setSelectedCustomerId(e.target.value)}
             >
               <option value="">Choose a customer...</option>
-              {mockCustomers.map(customer => (
+              {customers.map(customer => (
                 <option key={customer.id} value={customer.id}>{customer.name} ({customer.phone})</option>
               ))}
             </select>

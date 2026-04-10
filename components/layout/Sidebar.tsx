@@ -92,7 +92,7 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transition-transform lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 transition-transform lg:translate-x-0",
         isMobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">

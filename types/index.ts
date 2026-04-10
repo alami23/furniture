@@ -8,6 +8,9 @@ export interface Customer {
   address: string;
   area: string;
   district: string;
+  fullAddress?: string;
+  openingBalance?: number;
+  photo?: string;
   totalOrders: number;
   totalSpent: number;
   dueAmount: number;

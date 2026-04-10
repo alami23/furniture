@@ -27,37 +27,37 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, cn } from '@/lib/utils';
-import { mockCustomers } from '@/data/mock-data';
 import { Customer } from '@/types';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface CustomerListProps {
+  customers: Customer[];
   onView: (customer: Customer) => void;
   onEdit: (customer: Customer) => void;
   onDelete: (customer: Customer) => void;
 }
 
-export function CustomerList({ onView, onEdit, onDelete }: CustomerListProps) {
+export function CustomerList({ customers, onView, onEdit, onDelete }: CustomerListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [districtFilter, setDistrictFilter] = useState('all');
 
   const districts = useMemo(() => {
-    const uniqueDistricts = Array.from(new Set(mockCustomers.map(c => c.district)));
+    const uniqueDistricts = Array.from(new Set(customers.map(c => c.district).filter(Boolean)));
     return ['all', ...uniqueDistricts];
-  }, []);
+  }, [customers]);
 
   const filteredCustomers = useMemo(() => {
-    return mockCustomers.filter(customer => {
+    return customers.filter(customer => {
       const matchesSearch = 
         customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.phone.includes(searchQuery) ||
-        customer.district.toLowerCase().includes(searchQuery.toLowerCase());
+        (customer.district && customer.district.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesDistrict = districtFilter === 'all' || customer.district === districtFilter;
       
       return matchesSearch && matchesDistrict;
     });
-  }, [searchQuery, districtFilter]);
+  }, [customers, searchQuery, districtFilter]);
 
   return (
     <div className="space-y-6">
@@ -119,9 +119,15 @@ export function CustomerList({ onView, onEdit, onDelete }: CustomerListProps) {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold">
-                          {customer.name.charAt(0)}
-                        </div>
+                        {customer.photo ? (
+                          <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-200">
+                            <img src={customer.photo} alt={customer.name} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold shrink-0">
+                            {customer.name.charAt(0)}
+                          </div>
+                        )}
                         <div>
                           <div className="text-sm font-bold text-gray-900">{customer.name}</div>
                           <div className="text-[10px] text-gray-400 uppercase font-medium">ID: {customer.id}</div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { 
   Search, 
@@ -29,24 +29,34 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { mockProducts, mockCustomers } from '@/data/mock-data';
+import { mockProducts } from '@/data/mock-data';
 import { Product } from '@/types';
 import { formatCurrency, cn } from '@/lib/utils';
+import { CustomerSelect } from '@/components/pos/CustomerSelect';
+import { CustomerForm } from '@/components/customer/CustomerForm';
+import { useCustomers } from '@/lib/context/CustomerContext';
+import { InvoicePreviewModal, InvoiceData } from '@/components/pos/InvoicePreviewModal';
+import { CheckoutSuccessModal } from '@/components/pos/CheckoutSuccessModal';
 
 interface CartItem extends Product {
   quantity: number;
 }
 
 export function POSFurniture() {
+  const { customers, addCustomer } = useCustomers();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
+  const [selectedCustomer, setSelectedCustomer] = useState<string>('walk-in');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<number>(0);
   const [deliveryCharge, setDeliveryCharge] = useState<number>(0);
   const [deliveryDate, setDeliveryDate] = useState<string>('');
   const [paidAmount, setPaidAmount] = useState<number>(0);
+  const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
   // Filter products to only show furniture
   const furnitureProducts = useMemo(() => {
@@ -77,6 +87,49 @@ export function POSFurniture() {
   const dueAmount = useMemo(() => {
     return Math.max(0, total - paidAmount);
   }, [total, paidAmount]);
+
+  const handleCheckout = useCallback(() => {
+    if (cart.length === 0) return;
+    
+    const invoiceId = Date.now().toString().slice(-6);
+    const customer = customers.find(c => c.id === selectedCustomer) || {
+      name: 'Walk-in Customer',
+      phone: 'N/A',
+      address: 'N/A',
+      openingBalance: 0
+    };
+
+    const data: InvoiceData = {
+      invoiceNo: `INV-${invoiceId}`,
+      date: new Date().toLocaleDateString(),
+      type: 'furniture',
+      deliveryDate: deliveryDate || undefined,
+      customer: {
+        name: customer.name,
+        phone: customer.phone || 'N/A',
+        address: customer.address || 'N/A',
+        previousDue: customer.openingBalance || 0
+      },
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.category,
+        quantity: item.quantity,
+        rate: item.price,
+        amount: item.price * item.quantity
+      })),
+      subtotal,
+      discount,
+      deliveryCharge,
+      total,
+      paid: paidAmount,
+      due: dueAmount,
+      netDue: (customer.openingBalance || 0) + dueAmount
+    };
+
+    setInvoiceData(data);
+    setIsSuccessModalOpen(true);
+  }, [cart, customers, selectedCustomer, deliveryDate, subtotal, discount, deliveryCharge, total, paidAmount, dueAmount]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -113,7 +166,7 @@ export function POSFurniture() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)]">
       {/* Left Side: Product Gallery */}
-      <div className="lg:col-span-8 flex flex-col gap-4 overflow-hidden">
+      <div className="lg:col-span-9 flex flex-col gap-4 overflow-hidden">
         <Card className="border-none shadow-sm shrink-0">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-4">
@@ -248,7 +301,7 @@ export function POSFurniture() {
       </div>
 
       {/* Right Side: Order Panel */}
-      <div className="lg:col-span-4 flex flex-col h-full">
+      <div className="lg:col-span-4 flex flex-col h-full min-h-0">
         <Card className="border-none shadow-lg flex flex-col h-full bg-white">
           <CardHeader className="pb-4 shrink-0">
             <div className="flex items-center justify-between">
@@ -270,17 +323,16 @@ export function POSFurniture() {
           <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-0">
             {/* Customer Selection */}
             <div className="flex gap-2 shrink-0">
-              <Select value={selectedCustomer} onValueChange={(val) => setSelectedCustomer(val || '')}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select Customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockCustomers.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="icon" className="shrink-0 border-dashed border-orange-200 text-orange-600 hover:bg-orange-50">
+              <CustomerSelect 
+                value={selectedCustomer} 
+                onChange={setSelectedCustomer} 
+              />
+              <Button 
+                onClick={() => setIsCustomerFormOpen(true)}
+                variant="outline" 
+                size="icon" 
+                className="shrink-0 border-dashed border-orange-200 text-orange-600 hover:bg-orange-50"
+              >
                 <UserPlus className="w-4 h-4" />
               </Button>
             </div>
@@ -288,7 +340,7 @@ export function POSFurniture() {
             <Separator className="shrink-0" />
 
             {/* Cart Items */}
-            <ScrollArea className="flex-1 -mx-2 px-2">
+            <div className="flex-1 overflow-y-auto -mx-2 px-2 min-h-0">
               <AnimatePresence initial={false}>
                 {cart.length === 0 ? (
                   <motion.div 
@@ -359,7 +411,7 @@ export function POSFurniture() {
                   </div>
                 )}
               </AnimatePresence>
-            </ScrollArea>
+            </div>
 
             {/* Totals Section */}
             <div className="space-y-3 pt-4 border-t border-gray-100 shrink-0">
@@ -442,16 +494,60 @@ export function POSFurniture() {
 
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <Button variant="outline" className="w-full border-gray-200 hover:bg-gray-50">
-                  <Printer className="w-4 h-4 mr-2" /> A4 Print
+                  <Printer className="w-4 h-4 mr-2" /> Bill
                 </Button>
-                <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200">
-                  Place Order
+                <Button 
+                  onClick={handleCheckout}
+                  disabled={cart.length === 0}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200"
+                >
+                  Checkout
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Add New Customer Modal */}
+      <CustomerForm
+        customer={null}
+        isOpen={isCustomerFormOpen}
+        onClose={() => setIsCustomerFormOpen(false)}
+        onSave={(customerData) => {
+          addCustomer(customerData as any);
+          setSelectedCustomer(customerData.id!);
+          setIsCustomerFormOpen(false);
+        }}
+      />
+
+      {/* Success Modal */}
+      <CheckoutSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => {
+          setIsSuccessModalOpen(false);
+          resetOrder();
+        }}
+        onPrint={() => {
+          setIsSuccessModalOpen(false);
+          setIsInvoiceModalOpen(true);
+        }}
+        type="furniture"
+      />
+
+      {/* Invoice Preview Modal */}
+      <InvoicePreviewModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          resetOrder();
+        }}
+        data={invoiceData}
+        onPrintComplete={() => {
+          setIsInvoiceModalOpen(false);
+          resetOrder();
+        }}
+      />
     </div>
   );
 }

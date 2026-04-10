@@ -8,8 +8,10 @@ import { CustomerProfile } from '@/components/customer/CustomerProfile';
 import { Button } from '@/components/ui/button';
 import { UserPlus, Download, Users } from 'lucide-react';
 import { Customer } from '@/types';
+import { useCustomers } from '@/lib/context/CustomerContext';
 
 export default function CustomerPage() {
+  const { customers, addCustomer, updateCustomer, deleteCustomer } = useCustomers();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -32,12 +34,16 @@ export default function CustomerPage() {
 
   const handleDeleteCustomer = (customer: Customer) => {
     if (confirm(`Are you sure you want to delete ${customer.name}?`)) {
-      console.log('Deleting customer:', customer.id);
+      deleteCustomer(customer.id);
     }
   };
 
   const handleSaveCustomer = (customerData: Partial<Customer>) => {
-    console.log('Saving customer:', customerData);
+    if (editingCustomer) {
+      updateCustomer({ ...editingCustomer, ...customerData } as Customer);
+    } else {
+      addCustomer(customerData as Customer);
+    }
     setIsFormOpen(false);
   };
 
@@ -65,6 +71,7 @@ export default function CustomerPage() {
         </div>
 
         <CustomerList 
+          customers={customers}
           onView={handleViewProfile}
           onEdit={handleEditCustomer}
           onDelete={handleDeleteCustomer}

@@ -52,8 +52,12 @@ export function CustomerProfile({ customer, isOpen, onClose }: CustomerProfilePr
 
         <div className="px-8 pb-8 -mt-12 relative">
           {/* Profile Avatar */}
-          <div className="w-24 h-24 rounded-2xl bg-white shadow-lg flex items-center justify-center text-3xl font-bold text-orange-600 border-4 border-white">
-            {customer.name.charAt(0)}
+          <div className="w-24 h-24 rounded-2xl bg-white shadow-lg flex items-center justify-center text-3xl font-bold text-orange-600 border-4 border-white overflow-hidden">
+            {customer.photo ? (
+              <img src={customer.photo} alt={customer.name} className="w-full h-full object-cover" />
+            ) : (
+              customer.name.charAt(0)
+            )}
           </div>
 
           <div className="mt-4 flex items-start justify-between">

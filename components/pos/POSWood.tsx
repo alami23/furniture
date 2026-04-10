@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { 
   Search, 
   Plus, 
@@ -42,6 +42,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useWood, WoodItem } from '@/lib/context/WoodContext';
 import { WoodForm } from '@/components/inventory/WoodForm';
+import { CustomerSelect } from '@/components/pos/CustomerSelect';
+import { CustomerForm } from '@/components/customer/CustomerForm';
+import { useCustomers } from '@/lib/context/CustomerContext';
+import { InvoicePreviewModal, InvoiceData } from '@/components/pos/InvoicePreviewModal';
+import { CheckoutSuccessModal } from '@/components/pos/CheckoutSuccessModal';
 
 interface CartItem extends WoodItem {
   cartId: string;
@@ -49,6 +54,7 @@ interface CartItem extends WoodItem {
 
 export function POSWood() {
   const { inventory, setInventory, categories: globalCategories, carNos: globalCarNos, tags: globalTags } = useWood();
+  const { customers, addCustomer } = useCustomers();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [carNoFilter, setCarNoFilter] = useState('all');
@@ -58,9 +64,14 @@ export function POSWood() {
   const [discountType, setDiscountType] = useState<'amount' | 'percent'>('amount');
   const [delivery, setDelivery] = useState<number>(0);
   const [paidAmount, setPaidAmount] = useState<number>(0);
+  const [selectedCustomer, setSelectedCustomer] = useState<string>('walk-in');
   
   const [editingItem, setEditingItem] = useState<WoodItem | null>(null);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
   const categoryOptions = useMemo(() => {
     return ['all', ...globalCategories.map(c => c.name)];
@@ -102,6 +113,52 @@ export function POSWood() {
     return Math.max(0, total - paidAmount);
   }, [total, paidAmount]);
 
+  const handleCheckout = useCallback(() => {
+    if (cart.length === 0) return;
+    
+    const invoiceId = Date.now().toString().slice(-6);
+    const customer = customers.find(c => c.id === selectedCustomer) || {
+      name: 'Walk-in Customer',
+      phone: 'N/A',
+      address: 'N/A',
+      openingBalance: 0
+    };
+
+    const data: InvoiceData = {
+      invoiceNo: `INV-${invoiceId}`,
+      date: new Date().toLocaleDateString(),
+      type: 'wood',
+      customer: {
+        name: customer.name,
+        phone: customer.phone || 'N/A',
+        address: customer.address || 'N/A',
+        previousDue: customer.openingBalance || 0
+      },
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.treeNo,
+        description: `${item.width}x${item.length} ${item.tag !== 'Custom' ? item.tag : ''}`,
+        quantity: item.cft > 0 ? item.cft : 1,
+        rate: item.sellPrice,
+        amount: item.sellPrice * (item.cft > 0 ? item.cft : 1),
+        carNo: item.carNo,
+        treeNo: item.treeNo,
+        size: `${item.width}"x${item.length}'`,
+        cft: item.cft
+      })),
+      subtotal,
+      discount: calculatedDiscount,
+      deliveryCharge: delivery,
+      total,
+      paid: paidAmount,
+      due: dueAmount,
+      netDue: (customer.openingBalance || 0) + dueAmount
+    };
+
+    setInvoiceData(data);
+    setIsSuccessModalOpen(true);
+  }, [cart, customers, selectedCustomer, subtotal, calculatedDiscount, delivery, total, paidAmount, dueAmount]);
+
   const handleTagChange = (id: string, newTagCode: string) => {
     setInventory(prev => prev.map(item => {
       if (item.id === id) {
@@ -130,6 +187,7 @@ export function POSWood() {
     setDiscount(0);
     setDelivery(0);
     setPaidAmount(0);
+    setSelectedCustomer('walk-in');
   };
 
   const handleEditChange = (field: keyof WoodItem, value: any) => {
@@ -154,7 +212,7 @@ export function POSWood() {
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-40px)] bg-[#F8F9FA] -m-6 p-6">
       {/* LEFT SIDE */}
-      <div className="w-full lg:w-[67%] flex flex-col gap-4">
+      <div className="w-full lg:w-[72%] flex flex-col gap-4">
         {/* Top Filter Row */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-end gap-4 shrink-0">
           <div className="flex-1">
@@ -280,7 +338,7 @@ export function POSWood() {
       </div>
 
       {/* RIGHT SIDE */}
-      <div className="w-full lg:w-[33%] flex flex-col">
+      <div className="w-full lg:w-[33%] flex flex-col min-h-0">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="p-5 border-b border-gray-100 flex items-center gap-3 shrink-0">
@@ -290,17 +348,14 @@ export function POSWood() {
           
           {/* Customer Selection */}
           <div className="p-4 flex gap-2 shrink-0">
-            <Select defaultValue="walk-in">
-              <SelectTrigger className="flex-1 rounded-xl border-gray-200 h-10 shadow-sm">
-                <SelectValue placeholder="Walk-in Customer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                <SelectItem value="1">Rahim Traders</SelectItem>
-                <SelectItem value="2">Karim Wood Works</SelectItem>
-              </SelectContent>
-            </Select>
-            <button className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200 transition-colors shadow-sm shrink-0">
+            <CustomerSelect 
+              value={selectedCustomer} 
+              onChange={setSelectedCustomer} 
+            />
+            <button 
+              onClick={() => setIsCustomerFormOpen(true)}
+              className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200 transition-colors shadow-sm shrink-0"
+            >
               <UserPlus className="w-5 h-5" />
             </button>
             <button onClick={resetOrder} className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors shadow-sm shrink-0">
@@ -309,7 +364,7 @@ export function POSWood() {
           </div>
           
           {/* Cart Items */}
-          <ScrollArea className="flex-1 px-4">
+          <div className="flex-1 overflow-y-auto px-4 min-h-0">
             <div className="space-y-2 pb-4">
               {cart.map(item => {
                 const qty = item.cft > 0 ? item.cft : 1;
@@ -335,7 +390,7 @@ export function POSWood() {
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
 
           {/* Summary */}
           <div className="p-5 border-t border-gray-100 space-y-3.5 bg-white shrink-0">
@@ -402,7 +457,11 @@ export function POSWood() {
               <Button variant="outline" className="w-full rounded-xl border-gray-200 hover:bg-gray-50 h-12 font-semibold text-gray-700 shadow-sm">
                 <Receipt className="w-4 h-4 mr-2" /> Bill
               </Button>
-              <Button className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 h-12 font-bold text-base">
+              <Button 
+                onClick={handleCheckout}
+                disabled={cart.length === 0}
+                className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 h-12 font-bold text-base"
+              >
                 <CreditCard className="w-4 h-4 mr-2" /> Checkout
               </Button>
             </div>
@@ -424,6 +483,46 @@ export function POSWood() {
         isOpen={isAddFormOpen}
         onClose={() => setIsAddFormOpen(false)}
         onSave={handleSaveNewItem}
+      />
+
+      {/* Add New Customer Modal */}
+      <CustomerForm
+        customer={null}
+        isOpen={isCustomerFormOpen}
+        onClose={() => setIsCustomerFormOpen(false)}
+        onSave={(customerData) => {
+          addCustomer(customerData as any);
+          setSelectedCustomer(customerData.id!);
+          setIsCustomerFormOpen(false);
+        }}
+      />
+
+      {/* Success Modal */}
+      <CheckoutSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => {
+          setIsSuccessModalOpen(false);
+          resetOrder();
+        }}
+        onPrint={() => {
+          setIsSuccessModalOpen(false);
+          setIsInvoiceModalOpen(true);
+        }}
+        type="wood"
+      />
+
+      {/* Invoice Preview Modal */}
+      <InvoicePreviewModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          resetOrder();
+        }}
+        data={invoiceData}
+        onPrintComplete={() => {
+          setIsInvoiceModalOpen(false);
+          resetOrder();
+        }}
       />
     </div>
   );
