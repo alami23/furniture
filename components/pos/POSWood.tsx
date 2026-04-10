@@ -40,11 +40,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-
-interface TagOption {
-  code: string;
-  price: number;
-}
+import { useWood } from '@/lib/context/WoodContext';
 
 interface WoodItem {
   id: string;
@@ -76,7 +72,7 @@ const initialInventory: WoodItem[] = [
 ];
 
 export function POSWood() {
-  const [inventory, setInventory] = useState<WoodItem[]>(initialInventory);
+  const { inventory, setInventory, categories: globalCategories, carNos: globalCarNos, tags: globalTags } = useWood();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [carNoFilter, setCarNoFilter] = useState('all');
@@ -89,15 +85,13 @@ export function POSWood() {
   
   const [editingItem, setEditingItem] = useState<WoodItem | null>(null);
 
-  const categories = useMemo(() => {
-    const cats = new Set(inventory.map(item => item.category));
-    return ['all', ...Array.from(cats)];
-  }, [inventory]);
+  const categoryOptions = useMemo(() => {
+    return ['all', ...globalCategories.map(c => c.name)];
+  }, [globalCategories]);
 
-  const carNumbers = useMemo(() => {
-    const cars = new Set(inventory.map(item => item.carNo));
-    return ['all', ...Array.from(cars)];
-  }, [inventory]);
+  const carNoOptions = useMemo(() => {
+    return ['all', ...globalCarNos.map(c => c.number)];
+  }, [globalCarNos]);
 
   const filteredProducts = useMemo(() => {
     return inventory.filter(item => {
@@ -244,7 +238,7 @@ export function POSWood() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(cat => (
+                {categoryOptions.map(cat => (
                   <SelectItem key={cat} value={cat}>
                     {cat === 'all' ? 'All' : cat}
                   </SelectItem>
@@ -259,7 +253,7 @@ export function POSWood() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                {carNumbers.map(car => (
+                {carNoOptions.map(car => (
                   <SelectItem key={car} value={car}>
                     {car === 'all' ? 'All' : car}
                   </SelectItem>
@@ -488,12 +482,19 @@ export function POSWood() {
                   <Label htmlFor="carNo" className="text-right font-medium text-gray-600">
                     Car No
                   </Label>
-                  <Input
-                    id="carNo"
-                    value={editingItem.carNo}
-                    onChange={(e) => handleEditChange('carNo', e.target.value)}
-                    className="col-span-3 rounded-xl border-gray-200"
-                  />
+                  <Select 
+                    value={editingItem.carNo} 
+                    onValueChange={(val) => handleEditChange('carNo', val)}
+                  >
+                    <SelectTrigger className="col-span-3 rounded-xl border-gray-200">
+                      <SelectValue placeholder="Select Car No" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {globalCarNos.map(car => (
+                        <SelectItem key={car.id} value={car.number}>{car.number}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="treeNo" className="text-right font-medium text-gray-600">
@@ -510,12 +511,19 @@ export function POSWood() {
                   <Label htmlFor="category" className="text-right font-medium text-gray-600">
                     Category
                   </Label>
-                  <Input
-                    id="category"
-                    value={editingItem.category}
-                    onChange={(e) => handleEditChange('category', e.target.value)}
-                    className="col-span-3 rounded-xl border-gray-200"
-                  />
+                  <Select 
+                    value={editingItem.category} 
+                    onValueChange={(val) => handleEditChange('category', val)}
+                  >
+                    <SelectTrigger className="col-span-3 rounded-xl border-gray-200">
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {globalCategories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="width" className="text-right font-medium text-gray-600">
@@ -563,16 +571,31 @@ export function POSWood() {
                   <div className="space-y-3">
                     {editingItem.tags.map((tag, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <Input 
-                          placeholder="Tag Code (e.g. BL)" 
-                          value={tag.code}
-                          onChange={(e) => handleEditTagChange(index, 'code', e.target.value)}
-                          className="rounded-xl border-gray-200"
-                        />
+                        <Select 
+                          value={tag.code} 
+                          onValueChange={(val) => {
+                            const globalTag = globalTags.find(t => t.code === val);
+                            if (globalTag) {
+                              handleEditTagChange(index, 'code', globalTag.code);
+                              handleEditTagChange(index, 'price', globalTag.price);
+                            } else {
+                              handleEditTagChange(index, 'code', val);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="rounded-xl border-gray-200 w-[140px]">
+                            <SelectValue placeholder="Select Tag" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {globalTags.map(gt => (
+                              <SelectItem key={gt.id} value={gt.code}>{gt.code}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Input 
                           type="number"
                           placeholder="Price" 
-                          value={tag.price}
+                          value={tag.price || ''}
                           onChange={(e) => handleEditTagChange(index, 'price', e.target.value)}
                           className="rounded-xl border-gray-200 w-32"
                         />

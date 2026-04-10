@@ -26,54 +26,11 @@ import {
   DialogFooter 
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-
-// --- Types ---
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface CarNo {
-  id: string;
-  number: string;
-}
-
-interface Tag {
-  id: string;
-  code: string;
-  price: number;
-}
-
-// --- Initial Data ---
-const initialCategories: Category[] = [
-  { id: '1', name: 'Teak Wood' },
-  { id: '2', name: 'Mahogany' },
-  { id: '3', name: 'Pine' },
-  { id: '4', name: 'Plywood' },
-  { id: '5', name: 'MDF' },
-  { id: '6', name: 'Hardware' },
-  { id: '7', name: 'Finishing Materials' },
-];
-
-const initialCarNos: CarNo[] = [
-  { id: '1', number: '1' },
-  { id: '2', number: '2' },
-  { id: '3', number: '3' },
-  { id: '4', number: '4' },
-  { id: '5', number: '5' },
-];
-
-const initialTags: Tag[] = [
-  { id: '1', code: 'BL', price: 1700 },
-  { id: '2', code: 'UN2', price: 2250 },
-  { id: '3', code: 'OV2', price: 3000 },
-];
+import { useWood, Category, CarNo, Tag } from '@/lib/context/WoodContext';
 
 export function WoodCategories() {
   // --- State ---
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [carNos, setCarNos] = useState<CarNo[]>(initialCarNos);
-  const [tags, setTags] = useState<Tag[]>(initialTags);
+  const { categories, setCategories, carNos, setCarNos, tags, setTags } = useWood();
 
   const [searchCategory, setSearchCategory] = useState('');
   const [searchCarNo, setSearchCarNo] = useState('');
