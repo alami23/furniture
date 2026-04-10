@@ -7,8 +7,6 @@ import {
   Edit, 
   Trash2, 
   Filter,
-  ArrowUpDown,
-  Package,
   Ruler,
   Tag
 } from 'lucide-react';
@@ -24,44 +22,48 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, cn } from '@/lib/utils';
-import { mockWoodInventory } from '@/data/mock-data';
-import { WoodInventoryItem } from '@/types';
+import { WoodItem, useWood } from '@/lib/context/WoodContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface WoodListProps {
-  onEdit: (item: WoodInventoryItem) => void;
-  onDelete: (item: WoodInventoryItem) => void;
+  onEdit: (item: WoodItem) => void;
+  onDelete: (item: WoodItem) => void;
 }
 
 export function WoodList({ onEdit, onDelete }: WoodListProps) {
+  const { inventory, categories: globalCategories, carNos: globalCarNos, tags: globalTags } = useWood();
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-
-  const woodTypes = useMemo(() => {
-    const unique = Array.from(new Set(mockWoodInventory.map(item => item.woodType)));
-    return ['all', ...unique];
-  }, []);
+  const [carNoFilter, setCarNoFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
 
   const categories = useMemo(() => {
-    const unique = Array.from(new Set(mockWoodInventory.map(item => item.category)));
-    return ['all', ...unique];
-  }, []);
+    return ['all', ...globalCategories.map(c => c.name)];
+  }, [globalCategories]);
+
+  const carNos = useMemo(() => {
+    return ['all', ...globalCarNos.map(c => c.number)];
+  }, [globalCarNos]);
+
+  const tags = useMemo(() => {
+    return ['all', ...globalTags.map(t => t.code)];
+  }, [globalTags]);
 
   const filteredItems = useMemo(() => {
-    return mockWoodInventory.filter(item => {
+    return inventory.filter(item => {
       const matchesSearch = 
         item.itemNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.carNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.treeNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.woodType.toLowerCase().includes(searchQuery.toLowerCase());
+        item.category.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesType = typeFilter === 'all' || item.woodType === typeFilter;
       const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+      const matchesCarNo = carNoFilter === 'all' || item.carNo === carNoFilter;
+      const matchesTag = tagFilter === 'all' || item.tag === tagFilter;
       
-      return matchesSearch && matchesType && matchesCategory;
+      return matchesSearch && matchesCategory && matchesCarNo && matchesTag;
     });
-  }, [searchQuery, typeFilter, categoryFilter]);
+  }, [inventory, searchQuery, categoryFilter, carNoFilter, tagFilter]);
 
   return (
     <div className="space-y-6">
@@ -71,7 +73,7 @@ export function WoodList({ onEdit, onDelete }: WoodListProps) {
           <div className="relative flex-1 min-w-[250px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input 
-              placeholder="Search by Item No, Car No, Tree No or Type..." 
+              placeholder="Search by Item No, Car No, Tree No or Category..." 
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -80,19 +82,6 @@ export function WoodList({ onEdit, onDelete }: WoodListProps) {
           
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-400" />
-            <select 
-              className="bg-gray-50 border border-gray-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="all">All Wood Types</option>
-              {woodTypes.filter(t => t !== 'all').map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
             <select 
               className="bg-gray-50 border border-gray-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2"
               value={categoryFilter}
@@ -105,7 +94,33 @@ export function WoodList({ onEdit, onDelete }: WoodListProps) {
             </select>
           </div>
 
-          <Button variant="outline" onClick={() => { setSearchQuery(''); setTypeFilter('all'); setCategoryFilter('all'); }}>
+          <div className="flex items-center gap-2">
+            <select 
+              className="bg-gray-50 border border-gray-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2"
+              value={carNoFilter}
+              onChange={(e) => setCarNoFilter(e.target.value)}
+            >
+              <option value="all">All Car Nos</option>
+              {carNos.filter(c => c !== 'all').map(car => (
+                <option key={car} value={car}>{car}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select 
+              className="bg-gray-50 border border-gray-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2"
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+            >
+              <option value="all">All Tags</option>
+              {tags.filter(t => t !== 'all').map(tag => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))}
+            </select>
+          </div>
+
+          <Button variant="outline" onClick={() => { setSearchQuery(''); setCategoryFilter('all'); setCarNoFilter('all'); setTagFilter('all'); }}>
             Reset
           </Button>
         </div>
@@ -117,13 +132,17 @@ export function WoodList({ onEdit, onDelete }: WoodListProps) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Item Details</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Type & Category</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Dimensions</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">NO</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">CATEGORY</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">CAR NO</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">TAG</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">TREE NO</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">WIDTH</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">LENGTH</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">CFT</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Rates (৳)</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Stock</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Action</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">BUY PRICE</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">SELL PRICE</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">ACTION</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -136,37 +155,16 @@ export function WoodList({ onEdit, onDelete }: WoodListProps) {
                     exit={{ opacity: 0 }}
                     className="hover:bg-gray-50/50 transition-colors group"
                   >
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-gray-900">Item #{item.itemNo}</div>
-                      <div className="text-[10px] text-gray-400 uppercase font-medium">Car: {item.carNo} | Tree: {item.treeNo}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{item.woodType}</div>
-                      <Badge variant="outline" className="text-[10px] font-medium uppercase border-gray-200 mt-1">
-                        {item.category}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-[10px] text-gray-500 flex items-center gap-1">
-                        <Ruler className="w-3 h-3" /> {item.width}&quot; x {item.length}&apos; x {item.thickness}&quot;
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="text-sm font-bold text-gray-900">{item.cft}</div>
-                      <div className="text-[10px] text-gray-400 uppercase">{item.unit}</div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="text-sm font-bold text-gray-900">{formatCurrency(item.saleRate)}</div>
-                      <div className="text-[10px] text-gray-400">Buy: {formatCurrency(item.purchaseRate)}</div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className={cn(
-                        "text-sm font-bold",
-                        item.stockQty <= 5 ? "text-red-600" : "text-gray-900"
-                      )}>
-                        {item.stockQty}
-                      </div>
-                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.itemNo}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{item.category}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{item.carNo}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-blue-600">{item.tag}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-emerald-600">{item.treeNo}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{item.width}&quot;</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{item.length}&apos;</td>
+                    <td className="px-6 py-4 text-sm font-bold text-gray-900 text-right">{item.cft.toFixed(5)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 text-right">৳{item.buyPrice}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-orange-500 text-right">৳{item.sellPrice}</td>
                     <td className="px-6 py-4 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors">

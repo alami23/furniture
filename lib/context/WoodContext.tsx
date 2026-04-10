@@ -17,9 +17,11 @@ export interface WoodItem {
   length: number;
   cft: number;
   category: string;
-  tags: TagOption[];
-  selectedTag: string;
-  saleRate: number;
+  tag: string;
+  buyPrice: number;
+  sellPrice: number;
+  tags?: TagOption[];
+  selectedTag?: string;
 }
 
 interface WoodContextType {
@@ -61,14 +63,14 @@ export function WoodProvider({ children }: { children: React.ReactNode }) {
   ]);
 
   const [inventory, setInventory] = useState<WoodItem[]>([
-    { id: '1', itemNo: '1', carNo: '1', treeNo: '101', width: 24, length: 12, cft: 3.00000, category: 'Teak Wood', tags: [{ code: 'BL', price: 1700 }, { code: 'UN2', price: 2250 }], selectedTag: 'BL', saleRate: 1700 },
-    { id: '2', itemNo: '2', carNo: '1', treeNo: '102', width: 12, length: 8, cft: 0.50000, category: 'Mahogany', tags: [{ code: 'STD', price: 950 }], selectedTag: 'STD', saleRate: 950 },
-    { id: '3', itemNo: '3', carNo: '2', treeNo: '103', width: 18, length: 10, cft: 1.40625, category: 'Pine', tags: [{ code: 'LOC', price: 650 }, { code: 'IMP', price: 850 }], selectedTag: 'LOC', saleRate: 650 },
-    { id: '4', itemNo: '4', carNo: '2', treeNo: '201', width: 20, length: 6, cft: 1.04167, category: 'Plywood', tags: [{ code: 'WP18', price: 1500 }], selectedTag: 'WP18', saleRate: 1500 },
-    { id: '5', itemNo: '5', carNo: '3', treeNo: '202', width: 48, length: 8, cft: 8.00000, category: 'MDF', tags: [{ code: 'STD', price: 45 }], selectedTag: 'STD', saleRate: 45 },
-    { id: '6', itemNo: '6', carNo: '4', treeNo: '301', width: 0, length: 0, cft: 0.00000, category: 'Hardware', tags: [{ code: 'SCR', price: 35 }], selectedTag: 'SCR', saleRate: 35 },
-    { id: '7', itemNo: '7', carNo: '5', treeNo: '302', width: 0, length: 0, cft: 0.00000, category: 'Hardware', tags: [{ code: 'HNG', price: 450 }], selectedTag: 'HNG', saleRate: 450 },
-    { id: '8', itemNo: '8', carNo: '5', treeNo: '401', width: 0, length: 0, cft: 0.00000, category: 'Finishing', tags: [{ code: 'VAR', price: 850 }], selectedTag: 'VAR', saleRate: 850 },
+    { id: '1', itemNo: '1', carNo: '1', treeNo: '101', width: 24, length: 12, cft: 3.00000, category: 'Teak Wood', tag: 'BL', buyPrice: 1500, sellPrice: 1700, tags: [{ code: 'BL', price: 1700 }, { code: 'UN2', price: 2250 }], selectedTag: 'BL' },
+    { id: '2', itemNo: '2', carNo: '1', treeNo: '102', width: 12, length: 8, cft: 0.50000, category: 'Mahogany', tag: 'STD', buyPrice: 800, sellPrice: 950, tags: [{ code: 'STD', price: 950 }], selectedTag: 'STD' },
+    { id: '3', itemNo: '3', carNo: '2', treeNo: '103', width: 18, length: 10, cft: 1.40625, category: 'Pine', tag: 'LOC', buyPrice: 500, sellPrice: 650, tags: [{ code: 'LOC', price: 650 }, { code: 'IMP', price: 850 }], selectedTag: 'LOC' },
+    { id: '4', itemNo: '4', carNo: '2', treeNo: '201', width: 20, length: 6, cft: 1.04167, category: 'Plywood', tag: 'WP18', buyPrice: 1200, sellPrice: 1500, tags: [{ code: 'WP18', price: 1500 }], selectedTag: 'WP18' },
+    { id: '5', itemNo: '5', carNo: '3', treeNo: '202', width: 48, length: 8, cft: 8.00000, category: 'MDF', tag: 'STD', buyPrice: 35, sellPrice: 45, tags: [{ code: 'STD', price: 45 }], selectedTag: 'STD' },
+    { id: '6', itemNo: '6', carNo: '4', treeNo: '301', width: 0, length: 0, cft: 0.00000, category: 'Hardware', tag: 'SCR', buyPrice: 25, sellPrice: 35, tags: [{ code: 'SCR', price: 35 }], selectedTag: 'SCR' },
+    { id: '7', itemNo: '7', carNo: '5', treeNo: '302', width: 0, length: 0, cft: 0.00000, category: 'Hardware', tag: 'HNG', buyPrice: 350, sellPrice: 450, tags: [{ code: 'HNG', price: 450 }], selectedTag: 'HNG' },
+    { id: '8', itemNo: '8', carNo: '5', treeNo: '401', width: 0, length: 0, cft: 0.00000, category: 'Finishing', tag: 'VAR', buyPrice: 700, sellPrice: 850, tags: [{ code: 'VAR', price: 850 }], selectedTag: 'VAR' },
   ]);
 
   return (

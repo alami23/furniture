@@ -1,15 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Save, 
-  TreePine,
-  Ruler,
-  Tag,
-  Layers,
-  Info,
-  Truck
+  TreePine
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -21,49 +16,91 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { WoodInventoryItem } from '@/types';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { WoodItem, useWood } from '@/lib/context/WoodContext';
 
 interface WoodFormProps {
-  item: WoodInventoryItem | null;
+  item: WoodItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (item: Partial<WoodInventoryItem>) => void;
+  onSave: (item: Partial<WoodItem>) => void;
 }
 
 export function WoodForm({ item, isOpen, onClose, onSave }: WoodFormProps) {
-  const [formData, setFormData] = useState<Partial<WoodInventoryItem>>(() => {
+  const { categories, carNos, tags } = useWood();
+  
+  const [formData, setFormData] = useState<Partial<WoodItem>>(() => {
     if (item) return item;
     return {
-      itemNo: `W-${Math.floor(100 + Math.random() * 900)}`,
+      category: '',
       carNo: '',
+      tag: '',
       treeNo: '',
-      woodType: '',
       width: 0,
       length: 0,
-      thickness: 0,
       cft: 0,
-      unit: 'cft',
-      stockQty: 0,
-      purchaseRate: 0,
-      saleRate: 0,
-      category: 'Log',
-      notes: ''
+      buyPrice: 0,
+      sellPrice: 0,
     };
   });
 
-  const handleChange = (field: keyof WoodInventoryItem, value: any) => {
+  // Update form data when item prop changes (for editing)
+  useEffect(() => {
+    if (isOpen) {
+      if (item) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setFormData(item);
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setFormData({
+          category: '',
+          carNo: '',
+          tag: '',
+          treeNo: '',
+          width: 0,
+          length: 0,
+          cft: 0,
+          buyPrice: 0,
+          sellPrice: 0,
+        });
+      }
+    }
+  }, [item, isOpen]);
+
+  const handleChange = (field: keyof WoodItem, value: any) => {
     const updatedData = { ...formData, [field]: value };
     
     // Auto calculate CFT if dimensions change
-    if (['width', 'length', 'thickness'].includes(field)) {
+    if (field === 'width' || field === 'length') {
       const w = field === 'width' ? parseFloat(value) || 0 : formData.width || 0;
       const l = field === 'length' ? parseFloat(value) || 0 : formData.length || 0;
-      const t = field === 'thickness' ? parseFloat(value) || 0 : formData.thickness || 0;
       
-      // Basic CFT calculation: (Width" * Length' * Thickness") / 144
-      // Note: This is a simplified version, real wood calculation might vary
-      updatedData.cft = parseFloat(((w * l * t) / 144).toFixed(2));
+      // CFT = (WIDTH * WIDTH * LENGTH) / 2304
+      updatedData.cft = (w * w * l) / 2304;
+    }
+    
+    // Auto update Sell Price if Tag changes
+    if (field === 'tag') {
+      const selectedTag = tags.find(t => t.code === value);
+      if (selectedTag) {
+        updatedData.sellPrice = selectedTag.price;
+      }
+    }
+
+    // Auto update Tag if Sell Price changes
+    if (field === 'sellPrice') {
+      const matchingTag = tags.find(t => Number(t.price) === Number(value));
+      if (matchingTag) {
+        updatedData.tag = matchingTag.code;
+      } else {
+        updatedData.tag = 'Custom';
+      }
     }
     
     setFormData(updatedData);
@@ -71,7 +108,7 @@ export function WoodForm({ item, isOpen, onClose, onSave }: WoodFormProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="max-w-[820px] w-[95vw] p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
         <DialogHeader className="p-6 bg-gray-50 border-b border-gray-100 flex-row items-center justify-between space-y-0">
           <DialogTitle className="text-xl font-bold font-display flex items-center gap-2">
             <TreePine className="w-5 h-5 text-orange-500" />
@@ -82,161 +119,132 @@ export function WoodForm({ item, isOpen, onClose, onSave }: WoodFormProps) {
           </Button>
         </DialogHeader>
 
-        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
-          {/* Tracking Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-6 md:p-8 space-y-6">
+          {/* 1st Line: Category, Car No, Tag */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div className="space-y-2">
-              <Label>Item Number</Label>
-              <Input 
-                placeholder="e.g. W-101" 
-                value={formData.itemNo}
-                onChange={(e) => handleChange('itemNo', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                <Truck className="w-3.5 h-3.5 text-gray-400" /> Car Number
-              </Label>
-              <Input 
-                placeholder="e.g. D-101" 
-                value={formData.carNo}
-                onChange={(e) => handleChange('carNo', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Tree Number</Label>
-              <Input 
-                placeholder="e.g. T-505" 
-                value={formData.treeNo}
-                onChange={(e) => handleChange('treeNo', e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Classification */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Wood Type</Label>
-              <Input 
-                placeholder="e.g. Burma Teak, Mahogany" 
-                value={formData.woodType}
-                onChange={(e) => handleChange('woodType', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <select 
-                className="w-full h-10 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                value={formData.category}
-                onChange={(e) => handleChange('category', e.target.value)}
+              <Label className="text-gray-700 font-medium">Category</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(val) => handleChange('category', val)}
               >
-                <option value="Log">Log</option>
-                <option value="Plank">Plank</option>
-                <option value="Slab">Slab</option>
-                <option value="Plywood">Plywood</option>
-                <option value="MDF">MDF</option>
-              </select>
+                <SelectTrigger className="w-full rounded-xl border-gray-200 h-11 [&>span]:truncate">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Car No</Label>
+              <Select 
+                value={formData.carNo} 
+                onValueChange={(val) => handleChange('carNo', val)}
+              >
+                <SelectTrigger className="w-full rounded-xl border-gray-200 h-11 [&>span]:truncate">
+                  <SelectValue placeholder="Select Car No" />
+                </SelectTrigger>
+                <SelectContent>
+                  {carNos.map(car => (
+                    <SelectItem key={car.id} value={car.number}>{car.number}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Tag</Label>
+              <Select 
+                value={formData.tag} 
+                onValueChange={(val) => handleChange('tag', val)}
+              >
+                <SelectTrigger className="w-full rounded-xl border-gray-200 h-11 [&>span]:truncate">
+                  <SelectValue placeholder="Select Tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tags.map(t => (
+                    <SelectItem key={t.id} value={t.code}>
+                      {t.code} - ৳{t.price}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="Custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Dimensions */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-              <Ruler className="w-4 h-4 text-orange-500" /> Dimensions & CFT
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <Label>Width (inches)</Label>
-                <Input 
-                  type="number" 
-                  value={formData.width}
-                  onChange={(e) => handleChange('width', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Length (feet)</Label>
-                <Input 
-                  type="number" 
-                  value={formData.length}
-                  onChange={(e) => handleChange('length', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Thickness (inches)</Label>
-                <Input 
-                  type="number" 
-                  value={formData.thickness}
-                  onChange={(e) => handleChange('thickness', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Total CFT</Label>
-                <Input 
-                  type="number" 
-                  value={formData.cft}
-                  readOnly
-                  className="bg-gray-50 font-bold text-orange-600"
-                />
-              </div>
+          {/* 2nd Line: Tree No, Width, Length */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Tree No</Label>
+              <Input 
+                placeholder="e.g. 101" 
+                value={formData.treeNo || ''}
+                onChange={(e) => handleChange('treeNo', e.target.value)}
+                className="w-full rounded-xl border-gray-200 h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Width (inches)</Label>
+              <Input 
+                type="number" 
+                placeholder="0"
+                value={formData.width || ''}
+                onChange={(e) => handleChange('width', e.target.value)}
+                className="w-full rounded-xl border-gray-200 h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Length (feet)</Label>
+              <Input 
+                type="number" 
+                placeholder="0"
+                value={formData.length || ''}
+                onChange={(e) => handleChange('length', e.target.value)}
+                className="w-full rounded-xl border-gray-200 h-11"
+              />
             </div>
           </div>
 
-          {/* Inventory & Pricing */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-              <Tag className="w-4 h-4 text-orange-500" /> Inventory & Pricing
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <Label>Stock Qty</Label>
-                <Input 
-                  type="number" 
-                  value={formData.stockQty}
-                  onChange={(e) => handleChange('stockQty', parseInt(e.target.value) || 0)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Unit</Label>
-                <Input 
-                  value={formData.unit}
-                  onChange={(e) => handleChange('unit', e.target.value)}
-                  placeholder="e.g. cft, sft, pcs"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Purchase Rate (৳)</Label>
-                <Input 
-                  type="number" 
-                  value={formData.purchaseRate}
-                  onChange={(e) => handleChange('purchaseRate', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Sale Rate (৳)</Label>
-                <Input 
-                  type="number" 
-                  value={formData.saleRate}
-                  onChange={(e) => handleChange('saleRate', parseFloat(e.target.value) || 0)}
-                />
-              </div>
+          {/* 3rd Line: CFT, Buy Price, Sell Price */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">CFT</Label>
+              <Input 
+                type="text" 
+                value={formData.cft?.toFixed(5) || '0.00000'}
+                readOnly
+                className="w-full rounded-xl border-gray-200 h-11 bg-gray-50 font-bold text-gray-900"
+              />
             </div>
-          </div>
-
-          {/* Additional Info */}
-          <div className="space-y-2">
-            <Label>Notes / Supplier Reference</Label>
-            <Textarea 
-              placeholder="Add any additional details or supplier info..." 
-              value={formData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              rows={3}
-            />
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Buy Price (৳)</Label>
+              <Input 
+                type="number" 
+                placeholder="0"
+                value={formData.buyPrice || ''}
+                onChange={(e) => handleChange('buyPrice', parseFloat(e.target.value) || 0)}
+                className="w-full rounded-xl border-gray-200 h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Sell Price (৳)</Label>
+              <Input 
+                type="number" 
+                placeholder="0"
+                value={formData.sellPrice || ''}
+                onChange={(e) => handleChange('sellPrice', parseFloat(e.target.value) || 0)}
+                className="w-full rounded-xl border-gray-200 h-11"
+              />
+            </div>
           </div>
         </div>
 
         <DialogFooter className="p-6 bg-gray-50 border-t border-gray-100">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button className="bg-orange-500 hover:bg-orange-600 gap-2" onClick={() => onSave(formData)}>
+          <Button variant="outline" onClick={onClose} className="rounded-xl border-gray-200">Cancel</Button>
+          <Button className="bg-orange-500 hover:bg-orange-600 rounded-xl gap-2 text-white" onClick={() => onSave(formData)}>
             <Save className="w-4 h-4" /> {item ? 'Update Item' : 'Save Item'}
           </Button>
         </DialogFooter>

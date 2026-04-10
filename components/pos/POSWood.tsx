@@ -40,36 +40,12 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useWood } from '@/lib/context/WoodContext';
-
-interface WoodItem {
-  id: string;
-  itemNo: string;
-  carNo: string;
-  treeNo: string;
-  width: number;
-  length: number;
-  cft: number;
-  category: string;
-  tags: TagOption[];
-  selectedTag: string;
-  saleRate: number;
-}
+import { useWood, WoodItem } from '@/lib/context/WoodContext';
+import { WoodForm } from '@/components/inventory/WoodForm';
 
 interface CartItem extends WoodItem {
   cartId: string;
 }
-
-const initialInventory: WoodItem[] = [
-  { id: '1', itemNo: '1', carNo: '1', treeNo: '101', width: 24, length: 12, cft: 3.00000, category: 'Teak Wood', tags: [{ code: 'BL', price: 1700 }, { code: 'UN2', price: 2250 }], selectedTag: 'BL', saleRate: 1700 },
-  { id: '2', itemNo: '2', carNo: '1', treeNo: '102', width: 12, length: 8, cft: 0.50000, category: 'Mahogany', tags: [{ code: 'STD', price: 950 }], selectedTag: 'STD', saleRate: 950 },
-  { id: '3', itemNo: '3', carNo: '2', treeNo: '103', width: 18, length: 10, cft: 1.40625, category: 'Pine', tags: [{ code: 'LOC', price: 650 }, { code: 'IMP', price: 850 }], selectedTag: 'LOC', saleRate: 650 },
-  { id: '4', itemNo: '4', carNo: '2', treeNo: '201', width: 20, length: 6, cft: 1.04167, category: 'Plywood', tags: [{ code: 'WP18', price: 1500 }], selectedTag: 'WP18', saleRate: 1500 },
-  { id: '5', itemNo: '5', carNo: '3', treeNo: '202', width: 48, length: 8, cft: 8.00000, category: 'MDF', tags: [{ code: 'STD', price: 45 }], selectedTag: 'STD', saleRate: 45 },
-  { id: '6', itemNo: '6', carNo: '4', treeNo: '301', width: 0, length: 0, cft: 0.00000, category: 'Hardware', tags: [{ code: 'SCR', price: 35 }], selectedTag: 'SCR', saleRate: 35 },
-  { id: '7', itemNo: '7', carNo: '5', treeNo: '302', width: 0, length: 0, cft: 0.00000, category: 'Hardware', tags: [{ code: 'HNG', price: 450 }], selectedTag: 'HNG', saleRate: 450 },
-  { id: '8', itemNo: '8', carNo: '5', treeNo: '401', width: 0, length: 0, cft: 0.00000, category: 'Finishing', tags: [{ code: 'VAR', price: 850 }], selectedTag: 'VAR', saleRate: 850 },
-];
 
 export function POSWood() {
   const { inventory, setInventory, categories: globalCategories, carNos: globalCarNos, tags: globalTags } = useWood();
@@ -84,6 +60,7 @@ export function POSWood() {
   const [paidAmount, setPaidAmount] = useState<number>(0);
   
   const [editingItem, setEditingItem] = useState<WoodItem | null>(null);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
   const categoryOptions = useMemo(() => {
     return ['all', ...globalCategories.map(c => c.name)];
@@ -106,7 +83,7 @@ export function POSWood() {
   const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => {
       const qty = item.cft > 0 ? item.cft : 1;
-      return sum + (item.saleRate * qty);
+      return sum + (item.sellPrice * qty);
     }, 0);
   }, [cart]);
 
@@ -128,9 +105,12 @@ export function POSWood() {
   const handleTagChange = (id: string, newTagCode: string) => {
     setInventory(prev => prev.map(item => {
       if (item.id === id) {
-        const newTag = item.tags.find(t => t.code === newTagCode);
+        if (newTagCode === 'Custom') {
+          return { ...item, tag: 'Custom' };
+        }
+        const newTag = globalTags.find(t => t.code === newTagCode);
         if (newTag) {
-          return { ...item, selectedTag: newTag.code, saleRate: newTag.price };
+          return { ...item, tag: newTag.code, sellPrice: newTag.price };
         }
       }
       return item;
@@ -153,64 +133,22 @@ export function POSWood() {
   };
 
   const handleEditChange = (field: keyof WoodItem, value: any) => {
-    if (!editingItem) return;
-    
-    const updated = { ...editingItem, [field]: value };
-    
-    if (field === 'width' || field === 'length') {
-      const w = field === 'width' ? Number(value) : updated.width;
-      const l = field === 'length' ? Number(value) : updated.length;
-      updated.cft = (w * w * l) / 2304;
-    }
-    
-    setEditingItem(updated);
+    // Kept for compatibility if needed, but we'll use WoodForm for editing
   };
 
-  const handleEditTagChange = (index: number, field: keyof TagOption, value: any) => {
-    if (!editingItem) return;
-    const newTags = [...editingItem.tags];
-    newTags[index] = { ...newTags[index], [field]: field === 'price' ? Number(value) : value };
-    
-    let updated = { ...editingItem, tags: newTags };
-    
-    // If we updated the currently selected tag's price, update saleRate
-    if (newTags[index].code === updated.selectedTag && field === 'price') {
-      updated.saleRate = Number(value);
-    }
-    // If we updated the currently selected tag's code, update selectedTag
-    if (editingItem.tags[index].code === updated.selectedTag && field === 'code') {
-      updated.selectedTag = value;
-    }
-
-    setEditingItem(updated);
-  };
-
-  const addEditTag = () => {
-    if (!editingItem) return;
-    setEditingItem({
-      ...editingItem,
-      tags: [...editingItem.tags, { code: '', price: 0 }]
-    });
-  };
-
-  const removeEditTag = (index: number) => {
-    if (!editingItem) return;
-    const newTags = editingItem.tags.filter((_, i) => i !== index);
-    let updated = { ...editingItem, tags: newTags };
-    
-    // If we removed the selected tag, select the first available one
-    if (editingItem.tags[index].code === updated.selectedTag && newTags.length > 0) {
-      updated.selectedTag = newTags[0].code;
-      updated.saleRate = newTags[0].price;
-    }
-    
-    setEditingItem(updated);
-  };
-
-  const saveEdit = () => {
-    if (!editingItem) return;
-    setInventory(prev => prev.map(item => item.id === editingItem.id ? editingItem : item));
+  const handleSaveEditItem = (itemData: Partial<WoodItem>) => {
+    setInventory(prev => prev.map(item => item.id === itemData.id ? (itemData as WoodItem) : item));
     setEditingItem(null);
+  };
+
+  const handleSaveNewItem = (itemData: Partial<WoodItem>) => {
+    const newItem: WoodItem = {
+      ...itemData,
+      id: Math.random().toString(36).substr(2, 9),
+      itemNo: `W-${Math.floor(100 + Math.random() * 900)}`,
+    } as WoodItem;
+    setInventory(prev => [...prev, newItem]);
+    setIsAddFormOpen(false);
   };
 
   return (
@@ -231,7 +169,7 @@ export function POSWood() {
               />
             </div>
           </div>
-          <div className="w-40">
+          <div className="w-36">
             <label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block tracking-wider">Category</label>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="rounded-xl border-gray-200 h-10 shadow-sm">
@@ -246,7 +184,7 @@ export function POSWood() {
               </SelectContent>
             </Select>
           </div>
-          <div className="w-32">
+          <div className="w-36">
             <label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block tracking-wider">Car No</label>
             <Select value={carNoFilter} onValueChange={setCarNoFilter}>
               <SelectTrigger className="rounded-xl border-gray-200 h-10 shadow-sm">
@@ -260,6 +198,15 @@ export function POSWood() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="w-36">
+            <label className="text-[10px] font-bold text-transparent uppercase mb-1.5 block tracking-wider select-none">Action</label>
+            <Button 
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl h-10 shadow-sm"
+              onClick={() => setIsAddFormOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" /> Wood
+            </Button>
           </div>
         </div>
 
@@ -290,29 +237,24 @@ export function POSWood() {
                     <TableCell className="px-4 py-3 text-sm text-gray-700">{item.length}&apos;</TableCell>
                     <TableCell className="px-4 py-3 text-sm font-medium text-gray-900">{item.cft.toFixed(5)}</TableCell>
                     <TableCell className="px-4 py-3 text-sm text-gray-600">
-                      {item.tags.length > 1 ? (
-                        <Select 
-                          value={item.selectedTag} 
-                          onValueChange={(val) => handleTagChange(item.id, val)}
-                        >
-                          <SelectTrigger className="h-7 text-xs border-gray-200 bg-white shadow-sm w-[110px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {item.tags.map(t => (
-                              <SelectItem key={t.code} value={t.code} className="text-xs">
-                                {t.code} - ৳{t.price}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
-                          {item.selectedTag} - ৳{item.saleRate}
-                        </span>
-                      )}
+                      <Select 
+                        value={item.tag || 'Custom'} 
+                        onValueChange={(val) => handleTagChange(item.id, val)}
+                      >
+                        <SelectTrigger className="h-8 text-xs border-gray-200 bg-white shadow-sm w-[140px]">
+                          <SelectValue placeholder="Select Tag" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {globalTags.map(t => (
+                            <SelectItem key={t.code} value={t.code} className="text-xs">
+                              {t.code} - ৳{t.price}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="Custom" className="text-xs">Custom</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-sm font-semibold text-orange-500">৳{item.saleRate}</TableCell>
+                    <TableCell className="px-4 py-3 text-sm font-semibold text-orange-500">৳{item.sellPrice}</TableCell>
                     <TableCell className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
@@ -371,13 +313,13 @@ export function POSWood() {
             <div className="space-y-2 pb-4">
               {cart.map(item => {
                 const qty = item.cft > 0 ? item.cft : 1;
-                const amount = item.saleRate * qty;
+                const amount = item.sellPrice * qty;
                 return (
                   <div key={item.cartId} className="bg-slate-50 rounded-xl p-3 flex items-center justify-between border border-slate-100">
                     <div className="flex items-center gap-1.5 text-sm">
                       <span className="text-emerald-600 font-semibold">{item.treeNo}</span>
                       <span className="text-gray-500">({item.width}*{item.length})</span>
-                      <span className="text-blue-600 font-medium ml-1">{item.selectedTag}</span>
+                      <span className="text-blue-600 font-medium ml-1">{item.tag !== 'Custom' ? item.tag : ''}</span>
                       <span className="text-gray-400 mx-1">=</span>
                       <span className="font-bold text-gray-900">৳{amount.toFixed(2)}</span>
                     </div>
@@ -468,188 +410,21 @@ export function POSWood() {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-        <DialogContent className="sm:max-w-md rounded-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Edit Wood Item</DialogTitle>
-          </DialogHeader>
-          
-          {editingItem && (
-            <ScrollArea className="flex-1 -mx-6 px-6">
-              <div className="grid gap-5 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="carNo" className="text-right font-medium text-gray-600">
-                    Car No
-                  </Label>
-                  <Select 
-                    value={editingItem.carNo} 
-                    onValueChange={(val) => handleEditChange('carNo', val)}
-                  >
-                    <SelectTrigger className="col-span-3 rounded-xl border-gray-200">
-                      <SelectValue placeholder="Select Car No" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {globalCarNos.map(car => (
-                        <SelectItem key={car.id} value={car.number}>{car.number}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="treeNo" className="text-right font-medium text-gray-600">
-                    Tree No
-                  </Label>
-                  <Input
-                    id="treeNo"
-                    value={editingItem.treeNo}
-                    onChange={(e) => handleEditChange('treeNo', e.target.value)}
-                    className="col-span-3 rounded-xl border-gray-200"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right font-medium text-gray-600">
-                    Category
-                  </Label>
-                  <Select 
-                    value={editingItem.category} 
-                    onValueChange={(val) => handleEditChange('category', val)}
-                  >
-                    <SelectTrigger className="col-span-3 rounded-xl border-gray-200">
-                      <SelectValue placeholder="Select Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {globalCategories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="width" className="text-right font-medium text-gray-600">
-                    Width (in)
-                  </Label>
-                  <Input
-                    id="width"
-                    type="number"
-                    value={editingItem.width}
-                    onChange={(e) => handleEditChange('width', e.target.value)}
-                    className="col-span-3 rounded-xl border-gray-200"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="length" className="text-right font-medium text-gray-600">
-                    Length (ft)
-                  </Label>
-                  <Input
-                    id="length"
-                    type="number"
-                    value={editingItem.length}
-                    onChange={(e) => handleEditChange('length', e.target.value)}
-                    className="col-span-3 rounded-xl border-gray-200"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium text-gray-600">
-                    CFT
-                  </Label>
-                  <div className="col-span-3 font-bold text-gray-900 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
-                    {editingItem.cft.toFixed(5)}
-                  </div>
-                </div>
+      {/* Edit Modal using WoodForm */}
+      <WoodForm 
+        item={editingItem}
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        onSave={handleSaveEditItem}
+      />
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="font-bold text-gray-900">Tag Options</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addEditTag} className="h-8 rounded-lg">
-                      <Plus className="w-4 h-4 mr-1" /> Add Tag
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {editingItem.tags.map((tag, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <Select 
-                          value={tag.code} 
-                          onValueChange={(val) => {
-                            const globalTag = globalTags.find(t => t.code === val);
-                            if (globalTag) {
-                              handleEditTagChange(index, 'code', globalTag.code);
-                              handleEditTagChange(index, 'price', globalTag.price);
-                            } else {
-                              handleEditTagChange(index, 'code', val);
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="rounded-xl border-gray-200 w-[140px]">
-                            <SelectValue placeholder="Select Tag" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {globalTags.map(gt => (
-                              <SelectItem key={gt.id} value={gt.code}>{gt.code}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input 
-                          type="number"
-                          placeholder="Price" 
-                          value={tag.price || ''}
-                          onChange={(e) => handleEditTagChange(index, 'price', e.target.value)}
-                          className="rounded-xl border-gray-200 w-32"
-                        />
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => removeEditTag(index)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4 pt-2">
-                  <Label className="text-right font-medium text-gray-600">
-                    Default Tag
-                  </Label>
-                  <Select 
-                    value={editingItem.selectedTag} 
-                    onValueChange={(val) => {
-                      const tag = editingItem.tags.find(t => t.code === val);
-                      if (tag) {
-                        handleEditChange('selectedTag', val);
-                        handleEditChange('saleRate', tag.price);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="col-span-3 rounded-xl border-gray-200">
-                      <SelectValue placeholder="Select default tag" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {editingItem.tags.map(t => (
-                        <SelectItem key={t.code} value={t.code}>
-                          {t.code} - ৳{t.price}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-              </div>
-            </ScrollArea>
-          )}
-          
-          <DialogFooter className="pt-4 border-t border-gray-100 mt-2 shrink-0">
-            <Button variant="outline" onClick={() => setEditingItem(null)} className="rounded-xl border-gray-200">Cancel</Button>
-            <Button onClick={saveEdit} className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white">Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Add New Wood Modal */}
+      <WoodForm 
+        item={null}
+        isOpen={isAddFormOpen}
+        onClose={() => setIsAddFormOpen(false)}
+        onSave={handleSaveNewItem}
+      />
     </div>
   );
 }
